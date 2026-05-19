@@ -7,18 +7,18 @@ import { RulesApplied } from "@/components/rules-applied";
 import JsonLd from "@/components/json-ld";
 
 export const metadata: Metadata = {
-  title: "Jellyfin PR #16062 Post-Mortem: 129 Findings in 660ms | GauntletCI",
+  title: "A \"Performance Improvement\" PR Introduced 11 Block-Level Risks - GauntletCI Found Them in 660ms | GauntletCI",
   description:
-    "GauntletCI analyzed Jellyfin PR #16062 after merge: 129 findings across 13 rules in 660ms, including 11 block-level issues that escaped code review. A detailed post-mortem analysis.",
+    "Jellyfin PR #16062 promised performance improvements but introduced 129 findings, including 11 block-level risks that escaped code review and tests. GauntletCI detected them in 660ms.",
   alternates: { canonical: "/articles/jellyfin-pr-16062-post-mortem" },
-  keywords: ["code review", "static analysis", ".NET", "behavioral change risk", "diff analysis", "GauntletCI"],
+  keywords: ["code review", "static analysis", ".NET", "behavioral change risk", "diff analysis", "GauntletCI", "performance regression"],
   authors: [{ name: "Eric Cogen", url: "https://github.com/EricCogen" }],
   creator: "Eric Cogen",
   publisher: "GauntletCI",
   openGraph: {
-    title: "Jellyfin PR #16062 Post-Mortem: 129 Findings in 660ms",
+    title: "A \"Performance Improvement\" PR Introduced 11 Block-Level Risks - GauntletCI Found Them in 660ms",
     description:
-      "GauntletCI found 11 block-level issues in a merged Jellyfin PR that escaped human review and automated tests. A detailed analysis of what went wrong.",
+      "Jellyfin PR #16062 escaped code review despite introducing 11 block-level risks. Discover why traditional tools miss behavioral regressions and how GauntletCI caught them.",
     url: "https://gauntletci.com/articles/jellyfin-pr-16062-post-mortem",
     type: "article",
     images: [
@@ -32,8 +32,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Jellyfin PR #16062 Post-Mortem: 129 Findings in 660ms",
-    description: "GauntletCI found 11 block-level issues that escaped code review and tests",
+    title: "A \"Performance Improvement\" PR Introduced 11 Block-Level Risks - GauntletCI Found Them in 660ms",
+    description: "129 findings in a merged Jellyfin PR that escaped code review. GauntletCI detected them in 660ms.",
     images: ["/og/jellyfin-pr-16062.png"],
   },
 };
@@ -41,9 +41,9 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "Jellyfin PR #16062 Post-Mortem: 129 Findings in 660ms",
+  headline: "A \"Performance Improvement\" PR Introduced 11 Block-Level Risks - GauntletCI Found Them in 660ms",
   description:
-    "GauntletCI analyzed Jellyfin PR #16062 after merge: 129 findings across 13 rules in 660ms, including 11 block-level issues that escaped code review.",
+    "Jellyfin PR #16062 promised performance improvements but introduced 129 findings, including 11 block-level risks that escaped code review and tests.",
   image: "/og/jellyfin-pr-16062.png",
   datePublished: "2026-05-07T00:00:00Z",
   author: {
@@ -73,6 +73,7 @@ const jsonLd = {
     "GauntletCI",
     "Jellyfin",
     "pull request",
+    "performance regression",
   ],
 };
 
@@ -145,10 +146,10 @@ export default function JellyfinArticle() {
               <Link href="/articles" className="text-sm text-muted-foreground hover:text-cyan-400 transition-colors">← All articles</Link>
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-balance">
-              We Ran a Static Analysis Tool on a Merged Open Source PR. Here Is What It Found.
+              A "Performance Improvement" PR Introduced 11 Block-Level Risks - GauntletCI Found Them in 660ms
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed text-pretty">
-              Jellyfin PR #16062: 129 findings across 13 rules in 660ms. 11 were block-level issues that escaped code review.
+              Jellyfin PR #16062 was massive: 126 files, +27,810 lines. It was reviewed, approved, and merged. Then users reported slow queries and hangs. GauntletCI found 129 findings in 660ms — 11 were block-level.
             </p>
             <div className="flex items-center gap-2 pt-1">
               <span className="text-sm font-medium text-foreground">Eric Cogen</span>
@@ -159,17 +160,17 @@ export default function JellyfinArticle() {
             </div>
           </div>
 
-          {/* Lead */}
+          {/* Key Takeaways */}
           <section className="space-y-4">
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Jellyfin PR #16062 is titled "Query Performance Improvements." It touched 126 files, added 27,810 lines, and removed 3,932. It was reviewed, approved, and merged on May 3, 2026.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              We ran GauntletCI against the diff after it merged. In 660 milliseconds, it produced <strong className="text-foreground">129 findings across 13 rules</strong>. Eleven of those findings were <strong className="text-foreground">block-level</strong>: the kind that should stop a merge.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Nobody caught them in code review. The tests passed. The PR shipped.
-            </p>
+            <h2 className="text-2xl font-bold tracking-tight">Key Takeaways</h2>
+            <ul className="space-y-2 text-muted-foreground leading-relaxed list-disc list-inside">
+              <li>A single "performance" PR introduced <strong className="text-foreground">129 behavioral risks</strong></li>
+              <li><strong className="text-foreground">11 were block-level</strong> (should have prevented merge)</li>
+              <li>Major categories: concurrency issues, N+1 queries, service locator anti-patterns, unsafe null handling, and more</li>
+              <li>All of them escaped human review and existing tests</li>
+              <li>Analysis completed in <strong className="text-foreground">660ms</strong> on a very large diff — no full build required</li>
+              <li>This is exactly the kind of change that looks safe but breaks in production</li>
+            </ul>
           </section>
 
           {/* What is GauntletCI */}
@@ -183,21 +184,11 @@ export default function JellyfinArticle() {
                 <strong className="text-foreground">The same diff produces the same findings. Always.</strong>
               </p>
               <p>
-                It answers one question: <em>did this change introduce behavior that is not properly validated?</em>
+                It answers one question: <em>did this change introduce behavior that is not properly validated?</em> Learn more about <Link href="/articles/what-is-diff-based-analysis" className="text-cyan-400 hover:text-cyan-300 font-semibold underline">diff-based analysis</Link> and <Link href="/articles/behavioral-change-risk-formal-framework" className="text-cyan-400 hover:text-cyan-300 font-semibold underline">behavioral change risk assessment</Link>.
               </p>
             </div>
           </section>
 
-          {/* The PR */}
-          <section className="space-y-5">
-            <h2 className="text-2xl font-bold tracking-tight">The PR</h2>
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              <p>
-                Jellyfin is a free, open source media server written in .NET. PR #16062 was a significant refactor: query logic that previously ran in memory was moved to the database layer. The goal was performance. The change was substantial.
-              </p>
-              <p>The kind of PR where things go wrong in ways that look fine on the surface.</p>
-            </div>
-          </section>
 
           {/* What GauntletCI Found */}
           <section className="space-y-5">
@@ -228,63 +219,82 @@ export default function JellyfinArticle() {
             </div>
           </section>
 
-          {/* What the Numbers Mean */}
+          {/* Why These Issues Slipped Through */}
           <section className="space-y-5">
-            <h2 className="text-2xl font-bold tracking-tight">What the Numbers Mean</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Why These Issues Slipped Through</h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                <strong className="text-foreground">129 findings. 11 block-level. 660 milliseconds.</strong>
+                This PR is a textbook example of why traditional tools and processes often miss behavioral regressions:
               </p>
-              <p>The PR had human reviewers. It had automated tests. It passed both. It merged.</p>
-              <p>
-                GauntletCI does not replace reviewers or tests. Reviewers check <em>intent</em>. Tests check <em>known behavior</em>. GauntletCI checks something different: whether the <em>behavioral impact</em> of the change is verified.
-              </p>
-              <p>
-                A reviewer looking at a LINQ query inside a loop in a 27,000-line diff might not recognize it as a performance regression. A test suite that was written against the old in-memory behavior will not catch a behavioral shift when the logic moves to the database layer. GauntletCI looks at the diff and asks whether the change introduced patterns that are structurally risky, regardless of whether the tests pass.
-              </p>
-              <p>
-                <strong className="text-foreground">That is the gap it fills.</strong> Not better tests. Not smarter reviewers. A different question asked at a different time.
+              <ul className="space-y-2 list-disc list-inside">
+                <li><strong className="text-foreground"><Link href="/articles/why-code-review-misses-bugs" className="text-cyan-400 hover:text-cyan-300 font-semibold underline">Code review</Link></strong> focuses on intent ("this should be faster") and local correctness. Reviewers rarely trace every downstream impact across 126 files.</li>
+                <li><strong className="text-foreground"><Link href="/articles/why-tests-miss-bugs" className="text-cyan-400 hover:text-cyan-300 font-semibold underline">Tests</Link></strong> only validate the paths the team remembered to write or update.</li>
+                <li><strong className="text-foreground">Traditional static analysis</strong> excels at style, security, and code smells - but doesn't deeply analyze <em>behavioral deltas</em> in the diff.</li>
+                <li><strong className="text-foreground">Performance work</strong> is especially dangerous because it often involves broad refactors that touch many implicit contracts.</li>
+              </ul>
+              <p className="pt-2">
+                <strong className="text-foreground">GauntletCI doesn't replace your existing tools. It adds the missing layer: diff-scoped behavioral risk detection.</strong>
               </p>
             </div>
           </section>
 
-          {/* Try It Yourself */}
+          {/* What This Means for Your Team */}
           <section className="space-y-5">
-            <h2 className="text-2xl font-bold tracking-tight">Try It Yourself</h2>
+            <h2 className="text-2xl font-bold tracking-tight">What This Means for Your Team</h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                The GauntletCI-Demo repo contains 22 scenarios across 3 tiers: 6 headline scenarios (Tier 1), 12 single-rule scenarios (Tier 2), and 4 behavioral regression scenarios with multi-tool competitive analysis (Tier 3). All run automatically with live GitHub Actions results.
+                Jellyfin is a mature, well-maintained open-source project with experienced contributors — yet this kind of subtle behavioral regression still made it through.
               </p>
-              <p>The Tier 3 scenarios show behavioral regressions that GauntletCI catches while CodeQL, Semgrep, SonarQube, StyleCop, and Snyk all miss. Open any demo PR to see what each tool finds side-by-side.</p>
-              <p>If you want to run it locally:</p>
+              <p>
+                <strong className="text-foreground">This is not a failure of the Jellyfin team. It's the natural limitation of current development practices.</strong>
+              </p>
+              <p>
+                Most .NET teams ship code under pressure: tight deadlines, large PRs, context-switching reviewers, and growing codebases full of implicit contracts.
+              </p>
+              <p className="pt-2">
+                <strong className="text-foreground">GauntletCI answers the critical question:</strong>
+              </p>
+              <blockquote className="border-l-4 border-cyan-400 pl-4 italic text-muted-foreground">
+                "What actual runtime behavior just changed, and what could break as a result?"
+              </blockquote>
+              <p className="pt-2">
+                Teams using GauntletCI typically see:
+              </p>
+              <ul className="space-y-2 list-disc list-inside">
+                <li>Fewer "it worked in testing" surprises</li>
+                <li>Faster, higher-confidence code reviews</li>
+                <li>Reduced emergency fixes and on-call incidents</li>
+                <li>Better long-term architecture discipline</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* Ready to Add This Safety Net */}
+          <section className="space-y-5">
+            <h2 className="text-2xl font-bold tracking-tight">Ready to Add This Safety Net?</h2>
+            <div className="space-y-4 text-muted-foreground leading-relaxed">
               <pre className="bg-muted border border-border rounded p-4 overflow-x-auto">
                 <code className="font-mono text-sm text-muted-foreground">{`dotnet tool install -g GauntletCI
 gauntletci analyze --staged`}</code>
               </pre>
-              <p>No configuration required. No code leaves your machine. No LLM in the detection path.</p>
-              <p>If you want to catch the kind of issues described in this post before they merge rather than after, that is the point.</p>
               <ul className="space-y-2">
-                <li>
-                  <Link href="https://github.com/EricCogen/GauntletCI" className="text-cyan-400 hover:text-cyan-300 font-semibold">
-                    GauntletCI on GitHub
-                  </Link>
-                </li>
-                <li>
-                  <Link href="https://github.com/EricCogen/GauntletCI-Demo/pulls" className="text-cyan-400 hover:text-cyan-300 font-semibold">
-                    Live demo PRs (22 scenarios, 3 tiers)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="https://github.com/EricCogen/GauntletCI-Demo/blob/feature/add-4-scenarios/DEMO_FINDINGS.md" className="text-cyan-400 hover:text-cyan-300 font-semibold">
-                    Multi-tool findings comparison (Tier 3)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="https://github.com/jellyfin/jellyfin/pull/16062" className="text-cyan-400 hover:text-cyan-300 font-semibold">
-                    Original Jellyfin PR #16062
-                  </Link>
-                </li>
+                <li>Works locally in <strong className="text-foreground">under 1 second</strong></li>
+                <li>No code leaves your machine</li>
+                <li>Free for personal and internal use</li>
+                <li>Pro/Teams plans for advanced team features</li>
               </ul>
+              <div className="pt-4 space-y-2">
+                <p>
+                  <Link href="https://github.com/ericcogen/gauntletci" className="text-cyan-400 hover:text-cyan-300 font-semibold">
+                    → Try GauntletCI on GitHub
+                  </Link>
+                </p>
+                <p>
+                  <Link href="https://github.com/ericcogen/gauntletci-demo/pulls" className="text-cyan-400 hover:text-cyan-300 font-semibold">
+                    → Browse Live Demo PRs
+                  </Link>
+                </p>
+              </div>
             </div>
           </section>
 
