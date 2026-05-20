@@ -41,7 +41,14 @@ export function Breadcrumbs() {
     ];
 
     let href = "";
-    for (const segment of segments) {
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      
+      // Skip 'p' route parameter (pagination segment) and numeric page numbers
+      if (segment === "p" || /^\d+$/.test(segment)) {
+        continue;
+      }
+      
       href += `/${segment}`;
       const label = ROUTE_LABELS[segment] || formatLabel(segment);
       items.push({ label, href });
