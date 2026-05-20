@@ -81,8 +81,9 @@ export default function IntegrationsPage() {
             {
               href: "/docs/integrations/azure-devops",
               label: "Azure DevOps Task",
-              desc: "Pipeline task with inline ##vso annotations and branch policy enforcement.",
+              desc: "Manual pipeline setup today; Marketplace task distribution is coming soon.",
               tag: "CI/CD",
+              status: "Coming soon",
             },
             {
               href: "/docs/integrations/gitlab",
@@ -99,20 +100,23 @@ export default function IntegrationsPage() {
             {
               href: "/docs/integrations/vscode",
               label: "VS Code Extension",
-              desc: "Inline diagnostic squiggles, status bar, and analyze-on-save.",
+              desc: "Source available; Marketplace distribution is coming soon.",
               tag: "Editor",
+              status: "Coming soon",
             },
             {
               href: "/docs/integrations/visual-studio",
               label: "Visual Studio 2022",
-              desc: "Error List and Output window findings without leaving Visual Studio.",
+              desc: "Source available; Marketplace and VSIX distribution are coming soon.",
               tag: "Editor",
+              status: "Coming soon",
             },
             {
               href: "/docs/integrations/rider",
               label: "JetBrains Rider",
-              desc: "Inline annotation squiggles with tooltip rule links in Rider.",
+              desc: "Source available; JetBrains Marketplace distribution is coming soon.",
               tag: "Editor",
+              status: "Coming soon",
             },
             {
               href: "/docs/integrations/neovim",
@@ -123,8 +127,9 @@ export default function IntegrationsPage() {
             {
               href: "/docs/integrations/mcp",
               label: "MCP Server",
-              desc: "Let Claude, Copilot, and Cursor analyze commits and explain findings.",
+              desc: "Source build available today; npm package distribution is coming soon.",
               tag: "AI",
+              status: "Coming soon",
             },
             {
               href: "/docs/integrations/pre-commit",
@@ -140,9 +145,16 @@ export default function IntegrationsPage() {
             >
               <div className="flex items-start justify-between gap-2 mb-1">
                 <p className="font-medium text-sm">{card.label}</p>
-                <span className="text-xs text-cyan-400 border border-cyan-400/30 rounded px-1.5 py-0.5 shrink-0">
-                  {card.tag}
-                </span>
+                <div className="flex gap-1.5 shrink-0">
+                  {card.status ? (
+                    <span className="text-xs text-yellow-300 border border-yellow-400/30 rounded px-1.5 py-0.5">
+                      {card.status}
+                    </span>
+                  ) : null}
+                  <span className="text-xs text-cyan-400 border border-cyan-400/30 rounded px-1.5 py-0.5">
+                    {card.tag}
+                  </span>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground mt-1">{card.desc}</p>
             </Link>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { buildFaqSchema, softwareApplicationSchema } from "@/lib/schemas";
+import { IntegrationStatusBanner } from "../_components/integration-status-banner";
 
 export const metadata: Metadata = {
   title: "MCP Server (AI Assistants) | GauntletCI Docs",
@@ -41,7 +42,7 @@ const CLAUDE_CONFIG = `{
   "mcpServers": {
     "gauntletci": {
       "command": "node",
-      "args": ["/path/to/gauntletci-mcp/dist/index.js"]
+      "args": ["/path/to/GauntletCI-MCP/dist/index.js"]
     }
   }
 }`;
@@ -51,7 +52,7 @@ const COPILOT_CONFIG = `{
     "gauntletci": {
       "type": "stdio",
       "command": "node",
-      "args": ["\${workspaceFolder}/node_modules/.bin/gauntletci-mcp"]
+      "args": ["/path/to/GauntletCI-MCP/dist/index.js"]
     }
   }
 }`;
@@ -59,8 +60,8 @@ const COPILOT_CONFIG = `{
 const CURSOR_CONFIG = `{
   "mcpServers": {
     "gauntletci": {
-      "command": "npx",
-      "args": ["-y", "@ericcogen/gauntletci-mcp"]
+      "command": "node",
+      "args": ["/path/to/GauntletCI-MCP/dist/index.js"]
     }
   }
 }`;
@@ -84,6 +85,11 @@ export default function McpPage() {
             your question.
           </p>
         </div>
+
+        <IntegrationStatusBanner title="Coming soon: npm package">
+          The MCP server source repository exists, but the @ericcogen/gauntletci-mcp package is not
+          published to npm yet. Use the clone-and-build path below until the package is released.
+        </IntegrationStatusBanner>
 
         <section>
           <h2 className="text-2xl font-semibold mb-3">How it works</h2>
@@ -153,17 +159,12 @@ export default function McpPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold mb-3">Install the MCP server</h2>
-          <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm">
-            <p>
-              <span className="text-cyan-400">$</span>{" "}
-              <span className="text-foreground">npm install -g @ericcogen/gauntletci-mcp</span>
-            </p>
-          </div>
-          <p className="text-sm text-muted-foreground mt-3">
-            Or clone and build from source for the latest changes:
+          <h2 className="text-2xl font-semibold mb-3">Build the MCP server from source</h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            Until the npm package is published, clone the public source repository and run the built
+            server with <code className="bg-muted px-1 rounded text-xs">node dist/index.js</code>.
           </p>
-          <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm mt-2 space-y-1">
+          <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm space-y-1">
             <p>
               <span className="text-cyan-400">$</span>{" "}
               <span className="text-foreground">git clone https://github.com/EricCogen/GauntletCI-MCP</span>
@@ -192,7 +193,7 @@ export default function McpPage() {
             <pre className="text-foreground whitespace-pre">{CLAUDE_CONFIG}</pre>
           </div>
           <p className="text-sm text-muted-foreground mt-3">
-            Replace <code className="bg-muted px-1 rounded text-xs">/path/to/gauntletci-mcp/dist/index.js</code>{" "}
+            Replace <code className="bg-muted px-1 rounded text-xs">/path/to/GauntletCI-MCP/dist/index.js</code>{" "}
             with the absolute path to the built server. Restart Claude Desktop after saving.
           </p>
         </section>

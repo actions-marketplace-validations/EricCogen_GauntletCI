@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { buildFaqSchema, softwareApplicationSchema } from "@/lib/schemas";
+import { IntegrationStatusBanner } from "../_components/integration-status-banner";
 
 export const metadata: Metadata = {
   title: "JetBrains Rider Plugin | GauntletCI Docs",
   description:
-    "Install and configure the GauntletCI plugin for JetBrains Rider. Get inline annotation squiggles and tooltip rule links for .NET change risk findings.",
+    "Preview the planned GauntletCI plugin workflow for JetBrains Rider. The source repository exists, while Marketplace distribution is coming soon.",
   alternates: { canonical: "/docs/integrations/rider" },
 };
 
@@ -20,8 +21,8 @@ const jsonLd = {
 
 const faqSchema = buildFaqSchema([
   {
-    q: "How do I install the GauntletCI Rider plugin?",
-    a: "Open Rider, go to Settings > Plugins, search for GauntletCI in the Marketplace tab, and click Install. Restart Rider when prompted.",
+    q: "How do I use GauntletCI with Rider today?",
+    a: "Use the GauntletCI CLI or pre-commit hook today. The Rider plugin source repository exists, but the JetBrains Marketplace listing and release ZIP are not published yet.",
   },
   {
     q: "Does the Rider plugin require the CLI to be installed?",
@@ -54,6 +55,12 @@ export default function RiderPage() {
           </p>
         </div>
 
+        <IntegrationStatusBanner title="Coming soon: JetBrains Marketplace listing">
+          The Rider plugin source repository exists, but the JetBrains Marketplace listing and release
+          ZIP are not published yet. Treat this page as a preview of the planned plugin workflow until
+          release artifacts are available.
+        </IntegrationStatusBanner>
+
         <section>
           <h2 className="text-2xl font-semibold mb-4">Requirements</h2>
           <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
@@ -68,7 +75,7 @@ export default function RiderPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-4">Install</h2>
 
-          <p className="text-sm font-semibold mb-2">Via the JetBrains Marketplace</p>
+          <p className="text-sm font-semibold mb-2">Via the JetBrains Marketplace (planned)</p>
           <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside mb-5">
             <li>Open Rider and go to <strong>Settings &gt; Plugins</strong>.</li>
             <li>Select the <strong>Marketplace</strong> tab.</li>
@@ -76,10 +83,10 @@ export default function RiderPage() {
             <li>Restart Rider when prompted.</li>
           </ol>
 
-          <p className="text-sm font-semibold mb-2">Via .zip (manual)</p>
+          <p className="text-sm font-semibold mb-2">Via .zip (planned manual install)</p>
           <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
             <li>
-              Download the latest plugin <code className="bg-muted px-1 rounded text-xs">.zip</code> from{" "}
+              When published, download the latest plugin <code className="bg-muted px-1 rounded text-xs">.zip</code> from{" "}
               <a
                 href="https://github.com/EricCogen/GauntletCI-Rider/releases"
                 className="text-cyan-400 hover:underline"

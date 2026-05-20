@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { buildFaqSchema, softwareApplicationSchema } from "@/lib/schemas";
+import { IntegrationStatusBanner } from "../_components/integration-status-banner";
 
 export const metadata: Metadata = {
   title: "Azure DevOps Task | GauntletCI Docs",
@@ -20,8 +21,8 @@ const jsonLd = {
 
 const faqSchema = buildFaqSchema([
   {
-    q: "How do I install the GauntletCI Azure DevOps extension?",
-    a: "Search for 'GauntletCI' in the Azure DevOps Marketplace and click Get. You can install it organization-wide or for a specific project. Once installed, the GauntletCI Analyze task appears in the task library.",
+    q: "How do I use GauntletCI in Azure DevOps today?",
+    a: "Use the manual Azure Pipelines script on this page. It installs GauntletCI with dotnet tool install -g GauntletCI, creates a pull request diff, and runs gauntletci analyze. The Marketplace task distribution is coming soon.",
   },
   {
     q: "Does the GauntletCI ADO task need .NET installed on the agent?",
@@ -88,8 +89,18 @@ export default function AzureDevOpsPage() {
           </p>
         </div>
 
+        <IntegrationStatusBanner title="Coming soon: Marketplace task">
+          The Azure DevOps task repository exists, but the Marketplace task and release artifact are
+          not published yet. Use the manual pipeline script on this page today; the task-based install
+          steps will be updated once the extension is released.
+        </IntegrationStatusBanner>
+
         <section>
-          <h2 className="text-2xl font-semibold mb-3">Install the extension</h2>
+          <h2 className="text-2xl font-semibold mb-3">Install the extension (planned)</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            These are the planned Marketplace install steps. Use the manual install section below
+            until the Azure DevOps extension is published.
+          </p>
           <ol className="text-sm text-muted-foreground space-y-2 list-none mb-4">
             {[
               "Go to the Azure DevOps Marketplace",
@@ -111,10 +122,11 @@ export default function AzureDevOpsPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold mb-3">YAML pipeline</h2>
+          <h2 className="text-2xl font-semibold mb-3">YAML pipeline (planned task)</h2>
           <p className="text-muted-foreground mb-3 text-sm">
-            Add this to a new pipeline file in your repository. The pipeline runs on every pull
-            request targeting <code className="bg-muted px-1 rounded text-xs">main</code>.
+            Once the Marketplace task is published, add this to a new pipeline file in your
+            repository. The pipeline runs on every pull request targeting{" "}
+            <code className="bg-muted px-1 rounded text-xs">main</code>.
           </p>
           <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm overflow-x-auto">
             <pre className="text-foreground whitespace-pre">{YAML_PIPELINE}</pre>

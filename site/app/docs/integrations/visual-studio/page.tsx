@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { buildFaqSchema, softwareApplicationSchema } from "@/lib/schemas";
+import { IntegrationStatusBanner } from "../_components/integration-status-banner";
 
 export const metadata: Metadata = {
   title: "Visual Studio Extension | GauntletCI Docs",
   description:
-    "Install and configure the GauntletCI Visual Studio 2022 extension. Get change risk findings in the Error List and Output window without leaving your IDE.",
+    "Preview the planned GauntletCI Visual Studio 2022 extension workflow. The source repository exists, while Marketplace and VSIX distribution are coming soon.",
   alternates: { canonical: "/docs/integrations/visual-studio" },
 };
 
@@ -20,8 +21,8 @@ const jsonLd = {
 
 const faqSchema = buildFaqSchema([
   {
-    q: "How do I install the GauntletCI Visual Studio extension?",
-    a: "Open Visual Studio, go to Extensions > Manage Extensions, search for GauntletCI, and click Download. Restart Visual Studio to activate it. Alternatively, download the .vsix from GitHub Releases and double-click to install.",
+    q: "How do I use GauntletCI with Visual Studio today?",
+    a: "Use the GauntletCI CLI or pre-commit hook today. The Visual Studio extension source repository exists, but the Marketplace listing and VSIX release artifact are not published yet.",
   },
   {
     q: "Does the Visual Studio extension require the CLI to be installed?",
@@ -54,6 +55,12 @@ export default function VisualStudioPage() {
           </p>
         </div>
 
+        <IntegrationStatusBanner title="Coming soon: Visual Studio Marketplace listing">
+          The Visual Studio extension source repository exists, but the Marketplace listing and VSIX
+          release artifact are not published yet. Treat this page as a preview of the planned
+          extension workflow until release artifacts are available.
+        </IntegrationStatusBanner>
+
         <section>
           <h2 className="text-2xl font-semibold mb-4">Requirements</h2>
           <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
@@ -68,7 +75,7 @@ export default function VisualStudioPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-4">Install</h2>
 
-          <p className="text-sm font-semibold mb-2">Via the VS Marketplace</p>
+          <p className="text-sm font-semibold mb-2">Via the VS Marketplace (planned)</p>
           <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside mb-5">
             <li>Open Visual Studio 2022.</li>
             <li>Go to <strong>Extensions &gt; Manage Extensions</strong>.</li>
@@ -76,10 +83,10 @@ export default function VisualStudioPage() {
             <li>Click <strong>Download</strong>, then close and restart Visual Studio.</li>
           </ol>
 
-          <p className="text-sm font-semibold mb-2">Via .vsix (manual)</p>
+          <p className="text-sm font-semibold mb-2">Via .vsix (planned manual install)</p>
           <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
             <li>
-              Download the latest <code className="bg-muted px-1 rounded text-xs">.vsix</code> from{" "}
+              When published, download the latest <code className="bg-muted px-1 rounded text-xs">.vsix</code> from{" "}
               <a
                 href="https://github.com/EricCogen/GauntletCI-VisualStudio/releases"
                 className="text-cyan-400 hover:underline"

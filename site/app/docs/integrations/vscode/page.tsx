@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { buildFaqSchema, softwareApplicationSchema } from "@/lib/schemas";
+import { IntegrationStatusBanner } from "../_components/integration-status-banner";
 
 export const metadata: Metadata = {
   title: "VS Code Extension | GauntletCI Docs",
   description:
-    "Install and configure the GauntletCI VS Code extension. Get inline diagnostic squiggles, status bar indicators, and on-save analysis for .NET repositories.",
+    "Preview the planned GauntletCI VS Code extension workflow. The source repository exists, while Marketplace distribution is coming soon.",
   alternates: { canonical: "/docs/integrations/vscode" },
 };
 
@@ -20,8 +21,8 @@ const jsonLd = {
 
 const faqSchema = buildFaqSchema([
   {
-    q: "How do I install the GauntletCI VS Code extension?",
-    a: "Open VS Code, press Ctrl+Shift+X to open the Extensions panel, search for GauntletCI, and click Install. The extension activates automatically when you open a workspace that contains a .csproj or .sln file.",
+    q: "How do I use GauntletCI with VS Code today?",
+    a: "Use the GauntletCI CLI or pre-commit hook today. The VS Code extension source repository exists, but the EricCogen.gauntletci Marketplace listing is not published yet.",
   },
   {
     q: "Does the VS Code extension require the GauntletCI CLI to be installed?",
@@ -70,6 +71,12 @@ export default function VsCodePage() {
           </p>
         </div>
 
+        <IntegrationStatusBanner title="Coming soon: VS Code Marketplace extension">
+          The VS Code extension source repository exists, but the EricCogen.gauntletci Marketplace
+          listing is not published yet. Treat this page as a preview of the planned editor workflow;
+          use the CLI or pre-commit integration today.
+        </IntegrationStatusBanner>
+
         <section>
           <h2 className="text-2xl font-semibold mb-3">Prerequisites</h2>
           <ul className="space-y-2 text-sm text-muted-foreground list-none">
@@ -96,12 +103,13 @@ export default function VsCodePage() {
         <section>
           <h2 className="text-2xl font-semibold mb-3">Install the extension</h2>
           <p className="text-muted-foreground mb-4 text-sm">
-            Two ways to install - both take under a minute.
+            The Marketplace listing is pending. The steps below describe the planned install flow
+            once the extension is published.
           </p>
 
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-card p-4">
-              <p className="text-sm font-semibold mb-2">Option 1 - Extensions panel</p>
+              <p className="text-sm font-semibold mb-2">Option 1 - Extensions panel (planned)</p>
               <ol className="text-sm text-muted-foreground space-y-1 list-none">
                 {[
                   "Open VS Code",
@@ -118,7 +126,7 @@ export default function VsCodePage() {
             </div>
 
             <div className="rounded-lg border border-border bg-card p-4">
-              <p className="text-sm font-semibold mb-2">Option 2 - Command line</p>
+              <p className="text-sm font-semibold mb-2">Option 2 - Command line (planned)</p>
               <div className="font-mono text-sm">
                 <span className="text-cyan-400">$</span>{" "}
                 <span className="text-foreground">code --install-extension EricCogen.gauntletci</span>
