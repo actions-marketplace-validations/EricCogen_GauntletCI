@@ -271,6 +271,35 @@ export default function DemoPage() {
               </p>
             </div>
           </section>
+
+          <section className="rounded-2xl border border-border bg-card/50 p-6">
+            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-400">
+              Learn what the checks mean
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight">
+              Connect each demo finding back to the rule library
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm text-muted-foreground leading-relaxed">
+              After you inspect a scenario PR, use the docs to understand the rule category,
+              severity, and CI integration path behind the finding.
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/docs/rules"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold hover:border-cyan-500/40 hover:bg-card transition-colors"
+              >
+                Browse detection rules
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/docs/integrations/github-action"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold hover:border-cyan-500/40 hover:bg-card transition-colors"
+              >
+                View GitHub Actions setup
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
       <Footer />
