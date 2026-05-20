@@ -47,6 +47,78 @@ export const articles: Article[] = [
       "Diff-based analysis evaluates only what changed in a commit. Why that scope is the right unit of risk for pre-commit checks.",
     ruleIds: ["GCI0001", "GCI0003", "GCI0004"],
   },
+  {
+    slug: "can-ai-code-review-be-deterministic",
+    href: "/articles/can-ai-code-review-be-deterministic",
+    title: "Can AI Code Review Tools Ever Be Deterministic?",
+    description:
+      "Exploring the difference between helpful AI review and trustworthy engineering controls. Why determinism matters more than you think.",
+    ruleIds: ["GCI0016", "GCI0012", "GCI0044"],
+  },
+  {
+    slug: "jellyfin-pr-16062-post-mortem",
+    href: "/articles/jellyfin-pr-16062-post-mortem",
+    title: "A \"Performance Improvement\" PR Introduced 11 Block-Level Risks",
+    description:
+      "Jellyfin PR #16062 escaped code review despite introducing 11 block-level risks. Discover why traditional tools miss behavioral regressions.",
+    ruleIds: ["GCI0016", "GCI0012", "GCI0044"],
+  },
+  {
+    slug: "azure-sdk-pr-57223-risk-analysis",
+    href: "/articles/azure-sdk-pr-57223-risk-analysis",
+    title: "How Azure SDK PR #57223 Introduced 6,650+ Unique Risk Signals",
+    description:
+      "Azure SDK PR #57223 generated 6,650+ unique behavioral risk signals across 3 framework versions. See why traditional tools missed them.",
+    ruleIds: ["GCI0004", "GCI0003", "GCI0006", "GCI0024", "GCI0047"],
+  },
+  {
+    slug: "log4net-pr-201-analysis",
+    href: "/articles/log4net-pr-201-analysis",
+    title: "log4net PR #201: 3,753+ Risk Signals in a Major Enterprise Refactor",
+    description:
+      "Large-scale logging framework refactoring introducing thousands of behavioral changes across multiple code paths.",
+    ruleIds: ["GCI0003", "GCI0004", "GCI0016"],
+  },
+  {
+    slug: "google-api-pr-3150-analysis",
+    href: "/articles/google-api-pr-3150-analysis",
+    title: "Google API PR #3150 Analysis",
+    description:
+      "Behavioral risk analysis of a major Google API library pull request.",
+    ruleIds: ["GCI0003", "GCI0004", "GCI0006"],
+  },
+  {
+    slug: "stackexchange-redis-pr-3028",
+    href: "/articles/stackexchange-redis-pr-3028",
+    title: "StackExchange.Redis PR #3028 Analysis",
+    description:
+      "Behavioral change risk in a critical infrastructure library pull request.",
+    ruleIds: ["GCI0003", "GCI0004", "GCI0016"],
+  },
+  {
+    slug: "grpc-dotnet-pr-2531",
+    href: "/articles/grpc-dotnet-pr-2531",
+    title: "gRPC .NET PR #2531 Analysis",
+    description:
+      "Behavioral risk signals in a fundamental RPC framework pull request.",
+    ruleIds: ["GCI0003", "GCI0004", "GCI0006"],
+  },
+  {
+    slug: "anglesharp-pr-1159-analysis",
+    href: "/articles/anglesharp-pr-1159-analysis",
+    title: "AngleSharp PR #1159 Analysis",
+    description:
+      "HTML parser library pull request introducing behavioral changes.",
+    ruleIds: ["GCI0003", "GCI0004", "GCI0006"],
+  },
+  {
+    slug: "corpus-report-2025",
+    href: "/articles/corpus-report-2025",
+    title: "GauntletCI Corpus Report 2025: 40K+ Risk Signals Across 610 Enterprise PRs",
+    description:
+      "Comprehensive analysis of behavioral risk patterns across enterprise code changes.",
+    ruleIds: ["GCI0003", "GCI0004", "GCI0016"],
+  },
 ];
 
 export function articlesForRule(ruleId: string): Article[] {
