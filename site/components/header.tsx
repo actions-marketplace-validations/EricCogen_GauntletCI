@@ -63,6 +63,13 @@ export function Header() {
                       Proven Results
                     </Link>
                     <Link
+                      href="/demo"
+                      className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      onClick={() => setProductOpen(false)}
+                    >
+                      Live Demo
+                    </Link>
+                    <Link
                       href="/#quickstart"
                       className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       onClick={() => setProductOpen(false)}
@@ -111,7 +118,7 @@ export function Header() {
               <Link href="/pricing">Pricing</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link href="https://github.com/EricCogen/GauntletCI-Demo/pulls" target="_blank" rel="noopener noreferrer">
+              <Link href="/demo">
                 See Live Demo
               </Link>
             </Button>
@@ -141,6 +148,9 @@ export function Header() {
             <Link href="/#quickstart" className="text-sm text-muted-foreground hover:text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
               Quick Start
             </Link>
+            <Link href="/demo" className="text-sm text-muted-foreground hover:text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
+              Live Demo
+            </Link>
             <Link href="/articles/case-studies" className="text-sm text-muted-foreground hover:text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
               Case Studies
             </Link>
@@ -164,12 +174,7 @@ export function Header() {
                 <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
               </Button>
               <Button variant="outline" size="sm" asChild>
-                <Link
-                  href="https://github.com/EricCogen/GauntletCI-Demo/pulls"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
+                <Link href="/demo" onClick={() => setMobileMenuOpen(false)}>
                   See Live Demo
                 </Link>
               </Button>

@@ -21,11 +21,11 @@ export function Footer() {
                 <span className="text-lg font-semibold tracking-tight">GauntletCI</span>
               </Link>
               <p className="mt-4 text-sm text-muted-foreground max-w-xs">
-                Pre-commit change-risk detection for pull request diffs. 
+                Pre-commit change-risk detection for pull request diffs.
                 Catch behavioral changes before code review.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-16">
               <div>
                 <h3 className="text-sm font-semibold mb-4">Product</h3>
@@ -71,12 +71,7 @@ export function Footer() {
                 <h3 className="text-sm font-semibold mb-4">Community</h3>
                 <ul className="space-y-3">
                   <li>
-                    <Link
-                      href="https://github.com/EricCogen/GauntletCI-Demo/pulls"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    <Link href="/demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       Live Demo
                     </Link>
                   </li>
@@ -105,7 +100,7 @@ export function Footer() {
             </div>
           </div>
         </div>
-        
+
         <div className="border-t border-border py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">

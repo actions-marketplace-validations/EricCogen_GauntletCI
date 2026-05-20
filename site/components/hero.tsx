@@ -95,6 +95,11 @@ export function Hero() {
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
+              <Link href={addUtmParams("/demo", "hero", "cta_button", "live_demo")}>
+                See Live Demo
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
               <Link href={addUtmParams("/docs", "hero", "cta_button", "explore_docs")}>
                 Explore Docs
               </Link>

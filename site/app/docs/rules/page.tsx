@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { categories, rules, rulesByCategory, type Rule } from "@/lib/rules";
+import { rules } from "@/lib/rules";
 import { softwareApplicationSchema, buildFaqSchema } from "@/lib/schemas";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { RuleExplorer } from "./rule-explorer";
 
 export const metadata: Metadata = {
   title: "Rule Library | GauntletCI Docs",
@@ -53,21 +53,6 @@ const faqSchema = buildFaqSchema([
   },
 ]);
 
-function SeverityBadge({ severity }: { severity: Rule["severity"] }) {
-  const styles = {
-    Block: "bg-red-500/10 text-red-400 ring-red-400/20",
-    Warn: "bg-yellow-500/10 text-yellow-400 ring-yellow-400/20",
-    Info: "bg-muted text-muted-foreground ring-border",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${styles[severity]}`}
-    >
-      {severity}
-    </span>
-  );
-}
-
 export default function RulesPage() {
   return (
     <>
@@ -97,61 +82,9 @@ export default function RulesPage() {
             structural risk in your diff. Rules run locally in under one second.
             No rule sends code to any external service.
           </p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <a
-                key={cat.slug}
-                href={`#${cat.slug}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
-              >
-                <cat.icon className={`h-3 w-3 ${cat.color}`} />
-                {cat.title}
-                <span className="ml-0.5 text-muted-foreground/60">
-                  ({rulesByCategory(cat.slug).length})
-                </span>
-              </a>
-            ))}
-          </div>
         </div>
 
-        {categories.map((cat) => {
-          const catRules = rulesByCategory(cat.slug);
-          if (catRules.length === 0) return null;
-          return (
-            <section key={cat.slug} id={cat.slug} className="pt-4">
-              <div className="flex items-center gap-3 mb-1">
-                <cat.icon className={`h-5 w-5 ${cat.color}`} />
-                <h2 className="text-xl font-bold tracking-tight">{cat.title}</h2>
-              </div>
-              <p className="text-sm text-muted-foreground mb-5">{cat.tagline}</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {catRules.map((rule) => (
-                  <Link
-                    key={rule.id}
-                    href={`/docs/rules/${rule.id}`}
-                    id={rule.id}
-                    className="block rounded-xl border border-border bg-card p-4 hover:border-cyan-500/40 hover:bg-card/80 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-semibold ring-1 ring-inset ${cat.badgeColor}`}
-                      >
-                        {rule.id}
-                      </span>
-                      <SeverityBadge severity={rule.severity} />
-                    </div>
-                    <h3 className="text-sm font-semibold text-foreground mb-1.5">
-                      {rule.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {rule.description}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        <RuleExplorer />
 
         <div className="border-t border-border pt-6">
           <p className="text-sm text-muted-foreground">

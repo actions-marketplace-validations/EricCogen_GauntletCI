@@ -102,6 +102,12 @@ const pages = [
     sub: 'Installation, configuration, rules, and CLI reference.',
   },
   {
+    slug: 'demo',
+    title: 'Live Demo\nRepository',
+    category: 'Demo',
+    sub: '36 public scenario PRs with GitHub Actions checks.',
+  },
+  {
     slug: 'can-ai-code-review-be-deterministic',
     title: 'Can AI Code Review\nBe Deterministic?',
     category: 'Article',
