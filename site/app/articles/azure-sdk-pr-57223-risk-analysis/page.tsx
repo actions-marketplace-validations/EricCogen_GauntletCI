@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RulesApplied } from "@/components/rules-applied";
+import { AuthorBio } from "@/components/author-bio";
 import JsonLd from "@/components/json-ld";
 
 export const metadata: Metadata = {
@@ -435,6 +436,8 @@ export default function AzureSDKAnalysisPage() {
             </ul>
           </div>
         </section>
+
+        <AuthorBio variant="long" />
       </article>
 
       <Footer />

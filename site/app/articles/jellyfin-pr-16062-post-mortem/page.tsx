@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RulesApplied } from "@/components/rules-applied";
+import { AuthorBio } from "@/components/author-bio";
 import JsonLd from "@/components/json-ld";
 
 export const metadata: Metadata = {
@@ -375,6 +376,7 @@ gauntletci analyze --staged`}</code>
             <RulesApplied ids={["GCI0016", "GCI0012", "GCI0044", "GCI0038", "GCI0043", "GCI0006"]} />
           </div>
 
+          <AuthorBio variant="long" />
         </div>
       </main>
 

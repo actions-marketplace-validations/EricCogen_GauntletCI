@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { AuthorBio } from "@/components/author-bio";
 import JsonLd from "@/components/json-ld";
 
 export const metadata: Metadata = {
@@ -140,6 +141,8 @@ export default function RedisAnalysisPage() {
             <li><Link href="/articles/detect-breaking-changes-before-merge" className="text-cyan-500 hover:underline">Detect Breaking Changes Before Merge</Link> — Patterns that escape traditional analysis</li>
           </ul>
         </section>
+
+        <AuthorBio variant="long" />
       </article>
 
       <Footer />
