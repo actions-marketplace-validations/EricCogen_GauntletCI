@@ -128,6 +128,8 @@ const findings = [
   },
 ];
 
+const readingTime = "3 min read";
+
 export default function JellyfinArticle() {
   return (
     <>
@@ -157,6 +159,8 @@ export default function JellyfinArticle() {
               <span className="text-sm text-muted-foreground">Founder, GauntletCI</span>
               <span className="text-muted-foreground/40 text-sm">·</span>
               <time className="text-sm text-muted-foreground" dateTime="2026-05-07">May 7, 2026</time>
+              <span className="text-muted-foreground/40 text-sm">·</span>
+              <span className="text-sm text-muted-foreground">{readingTime}</span>
             </div>
           </div>
 
@@ -194,28 +198,83 @@ export default function JellyfinArticle() {
           <section className="space-y-5">
             <h2 className="text-2xl font-bold tracking-tight">What GauntletCI Found</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {findings.map((finding) => (
-                <div key={finding.rule} className="rounded-lg border border-border bg-card p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-mono font-semibold text-cyan-400">{finding.rule}</span>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                      finding.severity === "Block" 
-                        ? "bg-red-500/20 text-red-300" 
-                        : "bg-orange-500/20 text-orange-300"
-                    }`}>
-                      {finding.severity}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-foreground">{finding.title}</h3>
-                  <div className="text-xs font-semibold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded w-fit">
-                    {finding.count} findings
-                  </div>
-                  <p className="text-sm text-muted-foreground">{finding.description}</p>
-                  <div className="bg-muted p-3 rounded border-l-3 border-cyan-500/50 text-sm text-muted-foreground">
-                    <strong className="text-foreground">Impact:</strong> {finding.impact}
-                  </div>
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono font-semibold text-cyan-400">GCI0016</span>
+                  <span className="text-xs font-semibold px-2 py-1 rounded bg-red-500/20 text-red-300">Block</span>
                 </div>
-              ))}
+                <h3 className="font-semibold text-foreground">Concurrency and State Risk</h3>
+                <div className="text-xs font-semibold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded w-fit">5 findings</div>
+                <p className="text-sm text-muted-foreground">Five deadlock candidates: blocking calls on async operations (.Wait() and .GetAwaiter().GetResult())</p>
+                <div className="bg-muted p-3 rounded border-l-3 border-cyan-500/50 text-sm text-muted-foreground">
+                  <strong className="text-foreground">Impact:</strong> In ASP.NET Core, blocking on async can cause deadlock via synchronization context starvation. The request hangs with no exception or log entry.
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono font-semibold text-cyan-400">GCI0012</span>
+                  <span className="text-xs font-semibold px-2 py-1 rounded bg-red-500/20 text-red-300">Block</span>
+                </div>
+                <h3 className="font-semibold text-foreground">Security Risk</h3>
+                <div className="text-xs font-semibold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded w-fit">3 findings</div>
+                <p className="text-sm text-muted-foreground">Three dangerous API usages: Reflection and Activator.CreateInstance bypassing the DI container</p>
+                <div className="bg-muted p-3 rounded border-l-3 border-cyan-500/50 text-sm text-muted-foreground">
+                  <strong className="text-foreground">Impact:</strong> Reflection instantiation bypasses dependency injection, access controls, validation, and lifecycle management. In a media server handling authentication and content access, this is a real security concern.
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono font-semibold text-cyan-400">GCI0044</span>
+                  <span className="text-xs font-semibold px-2 py-1 rounded bg-orange-500/20 text-orange-300">Warn</span>
+                </div>
+                <h3 className="font-semibold text-foreground">Performance Hotpath Risk</h3>
+                <div className="text-xs font-semibold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded w-fit">28 findings</div>
+                <p className="text-sm text-muted-foreground">Twenty-eight N+1 query patterns: LINQ queries executing inside loops</p>
+                <div className="bg-muted p-3 rounded border-l-3 border-cyan-500/50 text-sm text-muted-foreground">
+                  <strong className="text-foreground">Impact:</strong> For a media library with tens of thousands of items, the difference between milliseconds and minutes. The PR was titled 'Query Performance Improvements.'
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono font-semibold text-cyan-400">GCI0038</span>
+                  <span className="text-xs font-semibold px-2 py-1 rounded bg-orange-500/20 text-orange-300">Warn</span>
+                </div>
+                <h3 className="font-semibold text-foreground">Dependency Injection Safety</h3>
+                <div className="text-xs font-semibold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded w-fit">45 findings</div>
+                <p className="text-sm text-muted-foreground">Forty-five service locator anti-patterns: reaching into the DI container instead of declaring dependencies</p>
+                <div className="bg-muted p-3 rounded border-l-3 border-cyan-500/50 text-sm text-muted-foreground">
+                  <strong className="text-foreground">Impact:</strong> Service locator code is harder to test, harder to reason about, and creates hidden coupling. The most common architectural regression in growing .NET codebases.
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono font-semibold text-cyan-400">GCI0043</span>
+                  <span className="text-xs font-semibold px-2 py-1 rounded bg-orange-500/20 text-orange-300">Warn</span>
+                </div>
+                <h3 className="font-semibold text-foreground">Nullability and Type Safety</h3>
+                <div className="text-xs font-semibold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded w-fit">15 findings</div>
+                <p className="text-sm text-muted-foreground">Fifteen as-cast operations without null checks</p>
+                <div className="bg-muted p-3 rounded border-l-3 border-cyan-500/50 text-sm text-muted-foreground">
+                  <strong className="text-foreground">Impact:</strong> obj as SomeType returns null on failure, not an exception. Using the result without checking causes NullReferenceException at runtime with no useful context.
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono font-semibold text-cyan-400">GCI0006</span>
+                  <span className="text-xs font-semibold px-2 py-1 rounded bg-orange-500/20 text-orange-300">Warn</span>
+                </div>
+                <h3 className="font-semibold text-foreground">Edge Case Handling</h3>
+                <div className="text-xs font-semibold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded w-fit">13 findings</div>
+                <p className="text-sm text-muted-foreground">Thirteen .Value accesses on nullable types without preceding null checks</p>
+                <div className="bg-muted p-3 rounded border-l-3 border-cyan-500/50 text-sm text-muted-foreground">
+                  <strong className="text-foreground">Impact:</strong> Explicit dereference of nullable values without verification. Runtime crashes in edge cases that tests did not cover.
+                </div>
+              </div>
             </div>
           </section>
 
@@ -313,7 +372,7 @@ gauntletci analyze --staged`}</code>
 
           {/* Rules Applied */}
           <div className="border-t border-border pt-12">
-            <RulesApplied ids={findings.map((f) => f.rule)} />
+            <RulesApplied ids={["GCI0016", "GCI0012", "GCI0044", "GCI0038", "GCI0043", "GCI0006"]} />
           </div>
 
         </div>

@@ -49,6 +49,8 @@ const findings = [
   { rule: "GCI0039", title: "Serialization Risk", count: 9, severity: "Warn", description: "Protobuf serialization changes" },
 ];
 
+const readingTime = "2 min read";
+
 export default function GrpcAnalysisPage() {
   return (
     <main className="min-h-screen flex flex-col">
@@ -58,28 +60,35 @@ export default function GrpcAnalysisPage() {
       <article className="flex-1 max-w-3xl mx-auto px-6 py-12">
         <JsonLd data={jsonLd} />
         <h1 className="text-4xl font-bold mb-4">gRPC-dotnet PR #2531: 2,600+ Risk Signals in Distributed RPC Framework</h1>
-        <p className="text-lg text-gray-600 mb-8">
+        <p className="text-lg text-muted-foreground mb-8">
           gRPC powers distributed systems across millions of microservices. PR #2531 restructured RPC service definitions with <strong>2,600+ behavioral risk signals</strong>, primarily signature changes and API exposure violations. We analyze this large-scale infrastructure refactoring.
         </p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
+          <span>By <span className="font-semibold text-foreground">Eric Cogen</span></span>
+          <span>•</span>
+          <span>May 19, 2026</span>
+          <span>•</span>
+          <span>{readingTime}</span>
+        </div>
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">The Numbers</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">2,600+</div>
-              <div className="text-sm text-gray-600">Risk Signals</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">2,600+</div>
+              <div className="text-sm text-muted-foreground">Risk Signals</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">1,269</div>
-              <div className="text-sm text-gray-600">Signature Changes</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">1,269</div>
+              <div className="text-sm text-muted-foreground">Signature Changes</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">1,143</div>
-              <div className="text-sm text-gray-600">API Exposures</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">1,143</div>
+              <div className="text-sm text-muted-foreground">API Exposures</div>
             </div>
-            <div className="bg-orange-50 p-4 rounded border-l-4 border-orange-600">
-              <div className="text-3xl font-bold text-orange-600">161</div>
-              <div className="text-sm text-gray-600">Null Risks</div>
+            <div className="bg-orange-500/5 p-4 rounded border-l-4 border-orange-500">
+              <div className="text-3xl font-bold text-orange-500">161</div>
+              <div className="text-sm text-muted-foreground">Null Risks</div>
             </div>
           </div>
         </section>
@@ -116,17 +125,17 @@ export default function GrpcAnalysisPage() {
           <p className="mb-4">
             The 2,600 findings represent real behavioral modifications to RPC service definitions and client APIs in gRPC-dotnet PR #2531.
           </p>
-          <p className="text-sm text-gray-600 mt-6">
-            Data source: <a href="https://gauntletci.com" className="text-blue-600 hover:underline">GauntletCI Corpus</a> analysis of merged PR #2531 in grpc/grpc-dotnet repository.
+          <p className="text-sm text-muted-foreground mt-6">
+            Data source: <a href="https://gauntletci.com" className="text-cyan-500 hover:underline">GauntletCI Corpus</a> analysis of merged PR #2531 in grpc/grpc-dotnet repository.
           </p>
         </section>
 
         <section className="mt-12 pt-8 border-t">
           <h2 className="text-2xl font-bold mb-4">Related Articles</h2>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/articles/corpus-report-2025" className="text-blue-600 hover:underline">GauntletCI Corpus Analysis 2025</Link> — 610 PRs across enterprise .NET ecosystem</li>
-            <li><Link href="/articles/azure-sdk-pr-57223-risk-analysis" className="text-blue-600 hover:underline">Azure SDK PR #57223 Analysis</Link> — 6,650+ signals in major framework refactoring</li>
-            <li><Link href="/articles/detect-breaking-changes-before-merge" className="text-blue-600 hover:underline">Detect Breaking Changes Before Merge</Link> — Patterns that escape traditional analysis</li>
+            <li><Link href="/articles/corpus-report-2025" className="text-cyan-500 hover:underline">GauntletCI Corpus Analysis 2025</Link> — 610 PRs across enterprise .NET ecosystem</li>
+            <li><Link href="/articles/azure-sdk-pr-57223-risk-analysis" className="text-cyan-500 hover:underline">Azure SDK PR #57223 Analysis</Link> — 6,650+ signals in major framework refactoring</li>
+            <li><Link href="/articles/detect-breaking-changes-before-merge" className="text-cyan-500 hover:underline">Detect Breaking Changes Before Merge</Link> — Patterns that escape traditional analysis</li>
           </ul>
         </section>
       </article>

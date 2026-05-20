@@ -109,6 +109,8 @@ const findings = [
   },
 ];
 
+const readingTime = "2 min read";
+
 export default function Log4NetAnalysisPage() {
   return (
     <main className="min-h-screen flex flex-col">
@@ -119,28 +121,35 @@ export default function Log4NetAnalysisPage() {
         <JsonLd data={jsonLd} />
 
         <h1 className="text-4xl font-bold mb-4">Apache log4net PR #201: 3,753+ Behavioral Risk Signals in Enterprise Logging</h1>
-        <p className="text-lg text-gray-600 mb-8">
-          log4net is a foundational logging library used by enterprises worldwide. PR #201 introduced a significant refactoring with <strong>3,753+ behavioral risk signals</strong> spanning signature changes, API exposure violations, and reflection-based access patterns. These risks remained hidden from traditional code review. We analyze what GauntletCI found.
+        <p className="text-lg text-muted-foreground mb-8">
+          log4net is a foundational logging library used by enterprises worldwide. PR #201 introduced a significant refactoring with <strong>3,753+ behavioral risk signals</strong> spanning <Link href="/articles/detect-breaking-changes-before-merge" className="text-cyan-500 hover:underline font-semibold">signature changes</Link>, API exposure violations, and reflection-based access patterns. These risks remained hidden from traditional code review. We analyze what GauntletCI found.
         </p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
+          <span>By <span className="font-semibold text-foreground">Eric Cogen</span></span>
+          <span>•</span>
+          <span>May 19, 2026</span>
+          <span>•</span>
+          <span>{readingTime}</span>
+        </div>
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">The Numbers at a Glance</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">3,753+</div>
-              <div className="text-sm text-gray-600">Risk Signals</div>
+            <div className="bg-cyan-500/5 p-4 rounded border-l-4 border-cyan-500">
+              <div className="text-3xl font-bold text-cyan-500">3,753+</div>
+              <div className="text-sm text-muted-foreground">Risk Signals</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">1,269</div>
-              <div className="text-sm text-gray-600">Signature Changes</div>
+            <div className="bg-cyan-500/5 p-4 rounded border-l-4 border-cyan-500">
+              <div className="text-3xl font-bold text-cyan-500">1,269</div>
+              <div className="text-sm text-muted-foreground">Signature Changes</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">1,238</div>
-              <div className="text-sm text-gray-600">API Exposures</div>
+            <div className="bg-cyan-500/5 p-4 rounded border-l-4 border-cyan-500">
+              <div className="text-3xl font-bold text-cyan-500">1,238</div>
+              <div className="text-sm text-muted-foreground">API Exposures</div>
             </div>
-            <div className="bg-orange-50 p-4 rounded border-l-4 border-orange-600">
-              <div className="text-3xl font-bold text-orange-600">816</div>
-              <div className="text-sm text-gray-600">Abstraction Bypasses</div>
+            <div className="bg-orange-500/5 p-4 rounded border-l-4 border-orange-500">
+              <div className="text-3xl font-bold text-orange-500">816</div>
+              <div className="text-sm text-muted-foreground">Abstraction Bypasses</div>
             </div>
           </div>
         </section>
@@ -148,25 +157,55 @@ export default function Log4NetAnalysisPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Finding Breakdown</h2>
           <div className="space-y-4">
-            {findings.map((finding) => (
-              <div key={finding.rule} className="border-l-4 border-gray-200 pl-4 py-2">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold text-lg">
-                    {finding.rule}: {finding.title}
-                  </h3>
-                  <span className={`px-3 py-1 rounded text-sm font-semibold ${
-                    finding.severity === "Block" ? "bg-red-100 text-red-800" :
-                    finding.severity === "High" ? "bg-orange-100 text-orange-800" :
-                    "bg-yellow-100 text-yellow-800"
-                  }`}>
-                    {finding.severity}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-2">{finding.count.toLocaleString()} findings</p>
-                <p className="text-gray-600 mb-1"><strong>What it means:</strong> {finding.description}</p>
-                <p className="text-gray-600"><strong>Impact:</strong> {finding.impact}</p>
+            <div className="border-l-4 border-border pl-4 py-2">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-bold text-lg">GCI0003: Signature Changes</h3>
+                <span className="px-3 py-1 rounded text-sm font-semibold inline-block whitespace-nowrap bg-red-500/20 text-red-400">Block</span>
               </div>
-            ))}
+              <p className="text-foreground mb-2">1,269 findings</p>
+              <p className="text-muted-foreground mb-1"><strong>What it means:</strong> Method signatures changed in incompatible ways that break callers</p>
+              <p className="text-muted-foreground"><strong>Impact:</strong> Callers using these logging methods will fail at compile time or runtime. Critical for production systems relying on log4net.</p>
+            </div>
+
+            <div className="border-l-4 border-border pl-4 py-2">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-bold text-lg">GCI0004: API Exposure</h3>
+                <span className="px-3 py-1 rounded text-sm font-semibold inline-block whitespace-nowrap bg-orange-500/20 text-orange-400">High</span>
+              </div>
+              <p className="text-foreground mb-2">1,238 findings</p>
+              <p className="text-muted-foreground mb-1"><strong>What it means:</strong> Types or methods changed from internal to public visibility</p>
+              <p className="text-muted-foreground"><strong>Impact:</strong> Users may depend on APIs meant to be internal. Creates support burden and makes future refactoring difficult.</p>
+            </div>
+
+            <div className="border-l-4 border-border pl-4 py-2">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-bold text-lg">GCI0007: Abstraction Layer Bypass</h3>
+                <span className="px-3 py-1 rounded text-sm font-semibold inline-block whitespace-nowrap bg-yellow-500/20 text-yellow-300">Warn</span>
+              </div>
+              <p className="text-foreground mb-2">816 findings</p>
+              <p className="text-muted-foreground mb-1"><strong>What it means:</strong> Direct access to internal implementation details, bypassing abstraction</p>
+              <p className="text-muted-foreground"><strong>Impact:</strong> Code becomes fragile when internal details change. Difficult to maintain and test.</p>
+            </div>
+
+            <div className="border-l-4 border-border pl-4 py-2">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-bold text-lg">GCI0006: Null Dereference Risk</h3>
+                <span className="px-3 py-1 rounded text-sm font-semibold inline-block whitespace-nowrap bg-yellow-500/20 text-yellow-300">Warn</span>
+              </div>
+              <p className="text-foreground mb-2">200 findings</p>
+              <p className="text-muted-foreground mb-1"><strong>What it means:</strong> New code paths access nullable values without null checks</p>
+              <p className="text-muted-foreground"><strong>Impact:</strong> Potential NullReferenceException in edge cases, especially problematic in logging infrastructure.</p>
+            </div>
+
+            <div className="border-l-4 border-border pl-4 py-2">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-bold text-lg">GCI0029: Resource Disposal Warning</h3>
+                <span className="px-3 py-1 rounded text-sm font-semibold inline-block whitespace-nowrap bg-yellow-500/20 text-yellow-300">Warn</span>
+              </div>
+              <p className="text-foreground mb-2">48 findings</p>
+              <p className="text-muted-foreground mb-1"><strong>What it means:</strong> Resources may not be properly disposed in all code paths</p>
+              <p className="text-muted-foreground"><strong>Impact:</strong> Memory leaks or resource exhaustion in long-running applications.</p>
+            </div>
           </div>
         </section>
 
@@ -212,8 +251,8 @@ export default function Log4NetAnalysisPage() {
             <li><strong>Behavioral contracts:</strong> Captures changes to method signatures, visibility, and call patterns that affect consuming code</li>
             <li><strong>No false positives from duplication:</strong> Unlike framework-version multiplication, logging changes are analyzed once per repository</li>
           </ul>
-          <p className="text-sm text-gray-600 mt-6">
-            Data source: <a href="https://gauntletci.com" className="text-blue-600 hover:underline">GauntletCI Corpus</a> analysis of merged PR #201 in apache/logging-log4net repository.
+          <p className="text-sm text-muted-foreground mt-6">
+            Data source: <a href="https://gauntletci.com" className="text-cyan-500 hover:underline">GauntletCI Corpus</a> analysis of merged PR #201 in apache/logging-log4net repository.
           </p>
         </section>
 
@@ -227,10 +266,33 @@ export default function Log4NetAnalysisPage() {
           </p>
         </section>
 
-        <section className="mt-12 pt-8 border-t">
-          <p className="text-sm text-gray-600 mb-4">
-            Read more: <Link href="/articles/corpus-report-2025" className="text-blue-600 hover:underline">GauntletCI Corpus Analysis</Link> — analyzing 610 merged PRs across enterprise .NET ecosystem.
-          </p>
+        <section className="mt-12 pt-8 border-t border-border">
+          <h2 className="text-2xl font-bold mb-4">Learn More</h2>
+          <div className="space-y-3">
+            <p className="mb-4">
+              <strong>Related reading:</strong>
+            </p>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/articles/corpus-report-2025" className="text-cyan-500 hover:underline font-semibold">
+                  GauntletCI Corpus Report: 40K+ Risk Signals Across 610 Enterprise PRs
+                </Link>
+                <span className="text-muted-foreground"> — How log4net compares to other foundational libraries</span>
+              </li>
+              <li>
+                <Link href="/articles/azure-sdk-pr-57223-risk-analysis" className="text-cyan-500 hover:underline font-semibold">
+                  Azure SDK PR #57223 Analysis
+                </Link>
+                <span className="text-muted-foreground"> — 6,650+ signals in multiframework refactoring</span>
+              </li>
+              <li>
+                <Link href="/articles/detect-breaking-changes-before-merge" className="text-cyan-500 hover:underline font-semibold">
+                  Detect Breaking Changes Before Merge
+                </Link>
+                <span className="text-muted-foreground"> — Patterns that escape traditional code review</span>
+              </li>
+            </ul>
+          </div>
         </section>
       </article>
 

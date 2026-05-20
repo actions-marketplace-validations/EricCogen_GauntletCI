@@ -49,6 +49,8 @@ const findings = [
   { rule: "GCI0006", title: "Null Dereference Risk", count: 381, severity: "Warn", description: "Nullable access without checks" },
 ];
 
+const readingTime = "2 min read";
+
 export default function RedisAnalysisPage() {
   return (
     <main className="min-h-screen flex flex-col">
@@ -58,28 +60,35 @@ export default function RedisAnalysisPage() {
       <article className="flex-1 max-w-3xl mx-auto px-6 py-12">
         <JsonLd data={jsonLd} />
         <h1 className="text-4xl font-bold mb-4">StackExchange.Redis PR #3028: 3,097+ Risk Signals in Production Cache Refactoring</h1>
-        <p className="text-lg text-gray-600 mb-8">
+        <p className="text-lg text-muted-foreground mb-8">
           StackExchange.Redis powers production caching for millions of transactions daily. PR #3028 refactored async handling with <strong>3,097+ behavioral risk signals</strong> spanning concurrent operation patterns, null dereference risks, and breaking API changes. We analyze the scope of this transformation.
         </p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
+          <span>By <span className="font-semibold text-foreground">Eric Cogen</span></span>
+          <span>•</span>
+          <span>May 19, 2026</span>
+          <span>•</span>
+          <span>{readingTime}</span>
+        </div>
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">The Numbers</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">3,097+</div>
-              <div className="text-sm text-gray-600">Risk Signals</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">3,097+</div>
+              <div className="text-sm text-muted-foreground">Risk Signals</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">671</div>
-              <div className="text-sm text-gray-600">Async Changes</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">671</div>
+              <div className="text-sm text-muted-foreground">Async Changes</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">640</div>
-              <div className="text-sm text-gray-600">Task Handling</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">640</div>
+              <div className="text-sm text-muted-foreground">Task Handling</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">568</div>
-              <div className="text-sm text-gray-600">Signature Changes</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">568</div>
+              <div className="text-sm text-muted-foreground">Signature Changes</div>
             </div>
           </div>
         </section>
@@ -118,17 +127,17 @@ export default function RedisAnalysisPage() {
           <p className="mb-4">
             The 3,097 findings represent real behavioral modifications to concurrent operation patterns, null safety contracts, and public APIs in StackExchange.Redis PR #3028.
           </p>
-          <p className="text-sm text-gray-600 mt-6">
-            Data source: <a href="https://gauntletci.com" className="text-blue-600 hover:underline">GauntletCI Corpus</a> analysis of merged PR #3028 in StackExchange/StackExchange.Redis repository.
+          <p className="text-sm text-muted-foreground mt-6">
+            Data source: <a href="https://gauntletci.com" className="text-cyan-500 hover:underline">GauntletCI Corpus</a> analysis of merged PR #3028 in StackExchange/StackExchange.Redis repository.
           </p>
         </section>
 
         <section className="mt-12 pt-8 border-t">
           <h2 className="text-2xl font-bold mb-4">Related Articles</h2>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/articles/corpus-report-2025" className="text-blue-600 hover:underline">GauntletCI Corpus Analysis 2025</Link> — 610 PRs across enterprise .NET ecosystem</li>
-            <li><Link href="/articles/azure-sdk-pr-57223-risk-analysis" className="text-blue-600 hover:underline">Azure SDK PR #57223 Analysis</Link> — 6,650+ signals in major framework refactoring</li>
-            <li><Link href="/articles/detect-breaking-changes-before-merge" className="text-blue-600 hover:underline">Detect Breaking Changes Before Merge</Link> — Patterns that escape traditional analysis</li>
+            <li><Link href="/articles/corpus-report-2025" className="text-cyan-500 hover:underline">GauntletCI Corpus Analysis 2025</Link> — 610 PRs across enterprise .NET ecosystem</li>
+            <li><Link href="/articles/azure-sdk-pr-57223-risk-analysis" className="text-cyan-500 hover:underline">Azure SDK PR #57223 Analysis</Link> — 6,650+ signals in major framework refactoring</li>
+            <li><Link href="/articles/detect-breaking-changes-before-merge" className="text-cyan-500 hover:underline">Detect Breaking Changes Before Merge</Link> — Patterns that escape traditional analysis</li>
           </ul>
         </section>
       </article>

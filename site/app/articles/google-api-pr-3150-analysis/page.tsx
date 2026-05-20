@@ -49,6 +49,8 @@ const findings = [
   { rule: "GCI0006", title: "Null Dereference Risk", count: 80, severity: "Warn", description: "Nullable value access without checks" },
 ];
 
+const readingTime = "2 min read";
+
 export default function GoogleAPIAnalysisPage() {
   return (
     <main className="min-h-screen flex flex-col">
@@ -58,28 +60,35 @@ export default function GoogleAPIAnalysisPage() {
       <article className="flex-1 max-w-3xl mx-auto px-6 py-12">
         <JsonLd data={jsonLd} />
         <h1 className="text-4xl font-bold mb-4">Google API .NET Client PR #3150: 3,548+ Risk Signals in Auto-Generated APIs</h1>
-        <p className="text-lg text-gray-600 mb-8">
+        <p className="text-lg text-muted-foreground mb-8">
           Google's .NET client libraries power integrations across millions of applications. PR #3150 regenerated client code with <strong>3,548+ behavioral risk signals</strong>, primarily in API exposure and resource management. We break down what GauntletCI found.
         </p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
+          <span>By <span className="font-semibold text-foreground">Eric Cogen</span></span>
+          <span>•</span>
+          <span>May 19, 2026</span>
+          <span>•</span>
+          <span>{readingTime}</span>
+        </div>
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">The Numbers</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">3,548+</div>
-              <div className="text-sm text-gray-600">Risk Signals</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">3,548+</div>
+              <div className="text-sm text-muted-foreground">Risk Signals</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">1,929</div>
-              <div className="text-sm text-gray-600">API Exposures</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">1,929</div>
+              <div className="text-sm text-muted-foreground">API Exposures</div>
             </div>
-            <div className="bg-orange-50 p-4 rounded border-l-4 border-orange-600">
-              <div className="text-3xl font-bold text-orange-600">712</div>
-              <div className="text-sm text-gray-600">Resource Leaks</div>
+            <div className="bg-orange-500/5 p-4 rounded border-l-4 border-orange-500">
+              <div className="text-3xl font-bold text-orange-500">712</div>
+              <div className="text-sm text-muted-foreground">Resource Leaks</div>
             </div>
-            <div className="bg-red-50 p-4 rounded border-l-4 border-red-600">
-              <div className="text-3xl font-bold text-red-600">525</div>
-              <div className="text-sm text-gray-600">Signature Changes</div>
+            <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
+              <div className="text-3xl font-bold text-red-500">525</div>
+              <div className="text-sm text-muted-foreground">Signature Changes</div>
             </div>
           </div>
         </section>
@@ -114,17 +123,17 @@ export default function GoogleAPIAnalysisPage() {
           <p className="mb-4">
             The 3,548 findings represent behavioral risks in generated code changes. Each finding is a real modification that affects consuming applications.
           </p>
-          <p className="text-sm text-gray-600 mt-6">
-            Data source: <a href="https://gauntletci.com" className="text-blue-600 hover:underline">GauntletCI Corpus</a> analysis of merged PR #3150 in googleapis/google-api-dotnet-client repository.
+          <p className="text-sm text-muted-foreground mt-6">
+            Data source: <a href="https://gauntletci.com" className="text-cyan-500 hover:underline">GauntletCI Corpus</a> analysis of merged PR #3150 in googleapis/google-api-dotnet-client repository.
           </p>
         </section>
 
         <section className="mt-12 pt-8 border-t">
           <h2 className="text-2xl font-bold mb-4">Related Articles</h2>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/articles/corpus-report-2025" className="text-blue-600 hover:underline">GauntletCI Corpus Analysis 2025</Link> — 610 PRs across enterprise .NET ecosystem</li>
-            <li><Link href="/articles/azure-sdk-pr-57223-risk-analysis" className="text-blue-600 hover:underline">Azure SDK PR #57223 Analysis</Link> — 6,650+ signals in major framework refactoring</li>
-            <li><Link href="/articles/detect-breaking-changes-before-merge" className="text-blue-600 hover:underline">Detect Breaking Changes Before Merge</Link> — Patterns that escape traditional analysis</li>
+            <li><Link href="/articles/corpus-report-2025" className="text-cyan-500 hover:underline">GauntletCI Corpus Analysis 2025</Link> — 610 PRs across enterprise .NET ecosystem</li>
+            <li><Link href="/articles/azure-sdk-pr-57223-risk-analysis" className="text-cyan-500 hover:underline">Azure SDK PR #57223 Analysis</Link> — 6,650+ signals in major framework refactoring</li>
+            <li><Link href="/articles/detect-breaking-changes-before-merge" className="text-cyan-500 hover:underline">Detect Breaking Changes Before Merge</Link> — Patterns that escape traditional analysis</li>
           </ul>
         </section>
       </article>
