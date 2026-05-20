@@ -107,6 +107,48 @@ const pages = [
     category: 'Article',
     sub: 'Determinism vs probabilistic judgment in code review.',
   },
+  {
+    slug: 'sonarqube-alternative',
+    title: 'SonarQube Alternative\nfor PR Gating',
+    category: 'Article',
+    sub: 'Behavioral risk gates for changes traditional quality gates miss.',
+  },
+  {
+    slug: 'coderabbit-alternative',
+    title: 'CodeRabbit Alternative\nfor PR Risk',
+    category: 'Compare',
+    sub: 'Deterministic merge evidence, not probabilistic review comments.',
+  },
+  {
+    slug: 'best-ai-code-review-tools',
+    title: 'Best AI Code Review\nTools for PRs',
+    category: 'Buyer Guide',
+    sub: 'Evaluate AI review by evidence, repeatability, and CI fit.',
+  },
+  {
+    slug: 'what-is-pull-request-risk-analysis',
+    title: 'What Is Pull Request\nRisk Analysis?',
+    category: 'Methodology',
+    sub: 'Measure behavioral, contract, and validation risk in the diff.',
+  },
+  {
+    slug: 'ci-quality-gate-for-pull-requests',
+    title: 'CI Quality Gate\nfor Pull Requests',
+    category: 'CI/CD',
+    sub: 'Block risky diffs before they become production incidents.',
+  },
+  {
+    slug: 'automated-code-review-tools-github',
+    title: 'Automated Code Review\nTools for GitHub',
+    category: 'GitHub',
+    sub: 'PR comments, required checks, and deterministic merge protection.',
+  },
+  {
+    slug: 'best-code-review-tools-github',
+    title: 'Best Code Review\nTools for GitHub',
+    category: 'Buyer Guide',
+    sub: 'A layered stack for human, AI, security, and PR risk review.',
+  },
 ];
 
 function escapeXml(str) {

@@ -184,6 +184,39 @@ export default function ArticleSlugPage() {
 
 ## Component Details
 
+### Shared Article Layout
+
+For standard SEO article pages, prefer the shared layout helper:
+
+```typescript
+import { ArticleLayout } from "../_components/article-layout";
+```
+
+`ArticleLayout` renders the required Header, Breadcrumbs, hero section, back link to `/articles`, author byline with reading time, RulesApplied, AuthorBio, and Footer. Page files still need their own Metadata export, JSON-LD schema script, static article content, `lib/articles.ts` registry entry, sitemap coverage, and OG image.
+
+### SourcesSection
+
+Commercial, competitor, tooling, SEO, and technical comparison articles must include a sources section:
+
+```typescript
+import { SourcesSection } from "../_components/sources-section";
+
+const sources = [
+  {
+    label: "Vendor documentation",
+    href: "https://example.com/docs",
+    description: "What factual claim this source supports.",
+  },
+];
+
+<SourcesSection sources={sources} />
+```
+
+- Use official vendor documentation whenever making claims about another product.
+- Frame unsupported statements as GauntletCI analysis or remove them.
+- Avoid absolute claims such as "always", "never", "guarantees", or "bulletproof" unless directly sourced.
+- Competitor pages should use factual, nominative comparison language and avoid logos or unverifiable negative claims.
+
 ### Breadcrumbs
 ```typescript
 <Breadcrumbs />

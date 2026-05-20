@@ -4,6 +4,8 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { AuthorBio } from "@/components/author-bio";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { RulesApplied } from "@/components/rules-applied";
+import { SourcesSection } from "../_components/sources-section";
 
 export const metadata: Metadata = {
   title: "SonarQube Alternative for .NET PR Gating | Behavioral Audit Layer",
@@ -75,6 +77,34 @@ const jsonLd = {
   ],
 };
 
+const readingTime = "9 min read";
+const sources = [
+  {
+    label: "SonarQube quality gates",
+    href: "https://docs.sonarsource.com/sonarqube-server/latest/quality-standards-administration/managing-quality-gates/introduction-to-quality-gates/",
+    description:
+      "Documents quality gates as sets of conditions that pass or fail analysis and can be reported to CI or repository platforms.",
+  },
+  {
+    label: "GitHub protected branches",
+    href: "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches",
+    description:
+      "Documents required pull request reviews and status checks before merging.",
+  },
+  {
+    label: "Why tests miss bugs",
+    href: "/articles/why-tests-miss-bugs",
+    description:
+      "Internal article explaining GauntletCI's position on validation gaps and passing tests.",
+  },
+  {
+    label: "Behavioral Change Risk framework",
+    href: "/articles/behavioral-change-risk-formal-framework",
+    description:
+      "Internal framework article defining GauntletCI's behavioral risk model.",
+  },
+];
+
 export default function SonarQubeAlternativeArticle() {
   return (
     <>
@@ -104,6 +134,8 @@ export default function SonarQubeAlternativeArticle() {
               <span className="text-sm text-muted-foreground">Founder, GauntletCI</span>
               <span className="text-muted-foreground/40 text-sm">·</span>
               <time className="text-sm text-muted-foreground" dateTime="2026-05-16">May 16, 2026</time>
+              <span className="text-muted-foreground/40 text-sm">·</span>
+              <span className="text-sm text-muted-foreground">{readingTime}</span>
             </div>
           </div>
 
@@ -361,7 +393,7 @@ public async Task<IActionResult> ProcessRefund(
             </div>
 
             <p className="text-muted-foreground leading-relaxed">
-              By gating your PRs based on <strong className="text-foreground">behavioral risk</strong> rather than arbitrary coverage percentages, you eliminate alert fatigue, empower your senior developers to focus on architecture during reviews, and ensure that your production deployments are truly bulletproof.
+              By gating your PRs based on <strong className="text-foreground">behavioral risk</strong> rather than coverage percentages alone, you reduce alert fatigue, give senior developers sharper review targets, and make risky changes more visible before merge.
             </p>
           </section>
 
@@ -372,6 +404,8 @@ public async Task<IActionResult> ProcessRefund(
               Let's stop scanning snapshots and start auditing behavior. SonarQube is great at what it does, but it's not enough on its own. A behavioral audit layer fills the gap—catching the regressions that quality gates miss before they reach production.
             </p>
           </section>
+
+          <SourcesSection sources={sources} />
 
           {/* Related reading */}
           <section className="space-y-4 rounded-xl border border-border bg-card/50 p-6">
@@ -434,7 +468,11 @@ public async Task<IActionResult> ProcessRefund(
             </Link>
           </div>
 
-          <AuthorBio variant="long" />
+          <RulesApplied ids={["GCI0003", "GCI0004", "GCI0041", "GCI0046"]} />
+
+          <div className="border-t border-border pt-12">
+            <AuthorBio variant="long" />
+          </div>
         </div>
       </main>
 

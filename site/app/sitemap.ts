@@ -1,9 +1,11 @@
 ﻿import { MetadataRoute } from "next";
 import { rules } from "@/lib/rules";
+import { articles } from "@/lib/articles";
 
 export const dynamic = "force-static";
 
 const BASE_URL = "https://gauntletci.com";
+const PAGE_SIZE = 10;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const ruleEntries: MetadataRoute.Sitemap = rules.map((r) => ({
@@ -12,10 +14,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
+  const articleEntries: MetadataRoute.Sitemap = articles.map((article) => ({
+    url: `${BASE_URL}${article.href}`,
+    changeFrequency: "monthly",
+    priority: article.slug === "corpus-report-2025" ? 0.9 : article.pinned ? 0.8 : 0.7,
+  }));
+
+  const totalArticlePages = Math.ceil(articles.length / PAGE_SIZE);
+
   // Pagination pages
-  const paginationEntries: MetadataRoute.Sitemap = [
-    { url: `${BASE_URL}/articles/p/2`, changeFrequency: "weekly", priority: 0.8 },
-  ];
+  const paginationEntries: MetadataRoute.Sitemap = Array.from(
+    { length: Math.max(totalArticlePages - 1, 0) },
+    (_, i) => ({
+      url: `${BASE_URL}/articles/p/${i + 2}`,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    })
+  );
 
   return [
     { url: `${BASE_URL}/`,                                    changeFrequency: "weekly",  priority: 1.0 },
@@ -32,22 +47,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/pricing`,                             changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/releases`,                            changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/about`,                               changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE_URL}/articles/why-tests-miss-bugs`,                 changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/why-code-review-misses-bugs`,         changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/detect-breaking-changes-before-merge`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/what-is-diff-based-analysis`,         changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE_URL}/articles/behavioral-change-risk-formal-framework`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/the-asymmetry-of-change`,             changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/can-ai-code-review-be-deterministic`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/jellyfin-pr-16062-post-mortem`,       changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/corpus-report-2025`,                  changeFrequency: "monthly", priority: 0.9 },
-    { url: `${BASE_URL}/articles/azure-sdk-pr-57223-risk-analysis`,    changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/sonarqube-alternative-behavioral-gating`, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE_URL}/articles/log4net-pr-201-analysis`,             changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/google-api-pr-3150-analysis`,         changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/stackexchange-redis-pr-3028`,         changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/grpc-dotnet-pr-2531`,                 changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/articles/anglesharp-pr-1159-analysis`,         changeFrequency: "monthly", priority: 0.8 },
+    ...articleEntries,
     { url: `${BASE_URL}/compare/gauntletci-vs-sonarqube`,     changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/compare/gauntletci-vs-codeql`,        changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/compare/gauntletci-vs-semgrep`,       changeFrequency: "monthly", priority: 0.8 },
