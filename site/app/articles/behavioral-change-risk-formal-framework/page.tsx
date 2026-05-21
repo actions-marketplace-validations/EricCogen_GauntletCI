@@ -836,8 +836,8 @@ export default function BCRFormalFrameworkPage() {
           <section className="space-y-4 border-t border-border pt-12">
             <h2 className="text-xl font-bold tracking-tight">Real-world examples from .NET OSS</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              The BCR categories above are not theoretical. These case studies show GauntletCI
-              detecting the exact patterns in real pull requests to widely-used .NET libraries.
+              The BCR categories above are not theoretical. These case studies show both direct
+              detections and honest coverage gaps in real pull requests to widely-used .NET libraries.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Link
@@ -846,7 +846,7 @@ export default function BCRFormalFrameworkPage() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-mono text-xs text-muted-foreground/60">StackExchange/StackExchange.Redis</span>
-                  <span className="font-mono text-xs text-muted-foreground/40">PR#2995</span>
+                  <span className="font-mono text-xs text-muted-foreground/40">PR #2995</span>
                 </div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">
                   Swallowed Exception in StackExchange.Redis
@@ -861,13 +861,13 @@ export default function BCRFormalFrameworkPage() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-mono text-xs text-muted-foreground/60">nunit/nunit</span>
-                  <span className="font-mono text-xs text-muted-foreground/40">PR#5192</span>
+                  <span className="font-mono text-xs text-muted-foreground/40">PR #5192</span>
                 </div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">
-                  Thread.Sleep in Async Context - NUnit
+                  Timeout Inheritance Change in NUnit
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  GCI0016 catches Thread.Sleep blocking the thread pool in an async context inside the NUnit test framework itself.
+                  A one-token AttributeUsage change shows a timeout behavior risk that current GCI0016 does not catch.
                 </p>
               </Link>
             </div>

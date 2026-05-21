@@ -1,238 +1,135 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import JsonLd from "@/components/json-ld";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { CaseStudyLayout } from "../_components/case-study-layout";
 
 export const metadata: Metadata = {
-  title: "Case Study: Thread.Sleep in Async Context in NUnit | GauntletCI",
+  title: "Case Study: Timeout Inheritance Change in NUnit | GauntletCI",
   description:
-    "GauntletCI catches Thread.Sleep() inside async test infrastructure in nunit/nunit PR#5192. Blocks thread pool threads and causes starvation under parallel test runs. Rule GCI0016.",
+    "A corrected deep dive into NUnit PR #5192, where a release-branch merge changed timeout attribute inheritance without introducing the Thread.Sleep pattern the old page claimed.",
   alternates: { canonical: "/articles/case-studies/nunit-thread-sleep-async" },
   openGraph: { images: [{ url: "/og/case-studies.png", width: 1200, height: 630 }] },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Article",
-  headline: "Case Study: Thread.Sleep in Async Context in NUnit",
-  description:
-    "GauntletCI catches Thread.Sleep() inside async test infrastructure in nunit/nunit PR#5192. Blocks thread pool threads and causes starvation under parallel test runs. Rule GCI0016.",
-  url: "https://gauntletci.com/articles/case-studies/nunit-thread-sleep-async",
-  author: { "@type": "Organization", name: "GauntletCI" },
-  publisher: { "@type": "Organization", name: "GauntletCI", url: "https://gauntletci.com" },
-  datePublished: "2025-05-03"
-};
-
-const lineColor: Record<string, string> = {
-  added: "bg-green-500/10 text-green-300",
-  removed: "bg-red-500/10 text-red-300",
-  context: "text-muted-foreground/60",
-};
-
-const linePrefix: Record<string, string> = {
-  added: "+",
-  removed: "-",
-  context: " ",
-};
-
-const diff: { type: string; line: string }[] = [
-  { type: "context", line: "// Added in NUnit async test infrastructure" },
-  { type: "added", line: "private async Task WaitForConditionAsync(Func<bool> condition)" },
-  { type: "added", line: "{" },
-  { type: "added", line: "    while (!condition())" },
-  { type: "added", line: "    {" },
-  { type: "added", line: "        Thread.Sleep(100);  // GCI0016: blocks thread pool thread in async context" },
-  { type: "added", line: "        // Should be: await Task.Delay(100);" },
-  { type: "added", line: "    }" },
-  { type: "added", line: "}" },
+const diffLines = [
+  { type: "context", line: "// CancelAfterAttribute now propagates from base fixtures/classes" },
+  { type: "removed", line: '[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited=false)]' },
+  { type: "added", line: '[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = true)]' },
+  { type: "context", line: "public class CancelAfterAttribute : PropertyAttribute, IApplyToContext" },
   { type: "context", line: "" },
-  { type: "context", line: "// Also added:" },
-  { type: "added", line: "private static int _retryCount;  // GCI0016: static mutable without synchronization" },
+  { type: "context", line: "// TimeoutAttribute also became inheritable" },
+  { type: "removed", line: "[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = false, Inherited = false)]" },
+  { type: "added", line: "[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = false, Inherited = true)]" },
+  { type: "context", line: "#if !NETFRAMEWORK" },
+  { type: "context", line: '[Obsolete(".NET No longer supports aborting threads as it is not a safe thing to do...")]' },
 ];
 
-const finding = [
-  "[GCI0016] Concurrency and State Risk",
-  "Summary  : Thread.Sleep() in async context detected - blocks thread pool thread.",
-  "Evidence : Thread.Sleep(100); in async method WaitForConditionAsync",
-  "Why      : Thread.Sleep blocks the calling thread for the full duration. In async",
-  "           contexts this defeats cooperative yielding and contributes to thread",
-  "           pool starvation under parallel workloads.",
-  "Action   : Replace Thread.Sleep with await Task.Delay() to yield the thread.",
+const findingBody = [
+  "Coverage note",
+  "Signal   : a one-token attribute metadata change alters derived fixture execution behavior",
+  "Reality  : current GCI0016 would not fire; no Thread.Sleep, .Wait(), .Result, lock(this), or async void was added",
+  "Lesson   : some high-impact behavior changes are API metadata changes, not obvious code-body hazards",
 ].join("\n");
 
 export default function NUnitThreadSleepAsyncPage() {
   return (
-    <>
-      <JsonLd data={jsonLd} />
-      <Header />
-      <main className="min-h-screen bg-background pt-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20 space-y-16">
-
-          {/* Hero */}
-          <div className="space-y-5 border-b border-border pb-12">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-400">
-                Case Study
+    <CaseStudyLayout
+      title="Timeout Inheritance Change in NUnit"
+      description="PR #5192 did not add Thread.Sleep in async code. The real case-study value is subtler: a release-branch merge changed timeout attribute inheritance, silently changing how derived test fixtures receive cancellation and timeout behavior."
+      canonicalPath="/articles/case-studies/nunit-thread-sleep-async"
+      repo="nunit/nunit"
+      pr="PR #5192"
+      prUrl="https://github.com/nunit/nunit/pull/5192"
+      outcomeLabel="COVERAGE GAP"
+      outcomeTone="cyan"
+      tags={["Async Tests", "Timeouts", "Rule Design"]}
+      ruleIds={["GCI0003"]}
+      stats={[
+        { value: "70", label: "files changed" },
+        { value: "37", label: "commits merged" },
+        { value: "0", label: "GCI0016 matches" },
+      ]}
+      sections={[
+        {
+          title: "What changed",
+          children: (
+            <>
+              <p>
+                PR #5192 was a release/4.6 merge to main. Among platform filter updates and framework
+                additions, two attribute declarations changed
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> Inherited = false</code>
+                to
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> Inherited = true</code>:
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> CancelAfterAttribute</code>
+                and
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> TimeoutAttribute</code>.
               </p>
-              <Link
-                href="/articles/case-studies"
-                className="text-sm text-muted-foreground hover:text-cyan-400 transition-colors"
-              >
-                ← All case studies
-              </Link>
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-balance">
-              Thread.Sleep in Async Context in NUnit
-            </h1>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-sm text-muted-foreground">
-                nunit/nunit
-              </span>
-              <a
-                href="https://github.com/nunit/nunit/pull/5192"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                PR#5192 ↗
-              </a>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/docs/rules/GCI0016"
-                className="font-mono text-xs font-medium px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors"
-              >
-                GCI0016
-              </Link>
-              <span className="text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
-                BLOCK
-              </span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                Concurrency
-              </span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                Async
-              </span>
-            </div>
-          </div>
-
-          {/* Context */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight">Context</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              NUnit PR#5192 introduced a{" "}
-              <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded">
-                Thread.Sleep()
-              </code>{" "}
-              call inside async test infrastructure code.{" "}
-              <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded">
-                Thread.Sleep
-              </code>{" "}
-              blocks a thread pool thread for the full sleep duration without
-              releasing it. In an async context, this defeats the purpose of async
-              - instead of yielding the thread while waiting, the code holds it,
-              contributing to thread pool starvation under parallel test execution.
-              The same PR also introduced a new static mutable field without
-              synchronization.
-            </p>
-          </section>
-
-          {/* Diff */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight">Diff evidence</h2>
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="border-b border-border bg-card/60 px-4 py-2 flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500/40" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/40" />
-                </div>
-                <span className="text-xs font-mono text-muted-foreground/40 ml-1">
-                  src/NUnitFramework/framework/Internal/AsyncToSyncAdapter.cs
-                </span>
-              </div>
-              <div className="p-4 font-mono text-xs leading-relaxed space-y-0.5 bg-background/50">
-                {diff.map((line, i) => (
-                  <div
-                    key={i}
-                    className={`flex gap-2 px-2 py-0.5 rounded ${lineColor[line.type]}`}
-                  >
-                    <span className="shrink-0 w-3 select-none">
-                      {linePrefix[line.type]}
-                    </span>
-                    <span className="whitespace-pre">{line.line}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t border-border bg-red-500/5 px-4 py-3">
-                <pre className="text-xs font-mono text-red-400 leading-relaxed whitespace-pre-wrap">
-                  {finding}
-                </pre>
-              </div>
-            </div>
-          </section>
-
-          {/* Why it matters */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight">Why it matters</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              The irony of a{" "}
-              <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded">
-                Thread.Sleep
-              </code>{" "}
-              in the NUnit source itself is significant. NUnit is the test
-              framework used to validate that code is correct. If the framework's
-              own async infrastructure blocks threads, it can cause intermittent
-              test timeouts under parallel execution (the default in modern .NET
-              test runs), mask real timing bugs because the test environment does
-              not match production async behavior, and create false passes or
-              failures that developers learn to ignore. Every project using NUnit
-              async tests inherits this behavior.
-            </p>
-          </section>
-
-          {/* Rule link */}
-          <section className="border-t border-border pt-10 space-y-4">
-            <h2 className="text-lg font-semibold">Detection rule</h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              This finding is produced by{" "}
-              <Link
-                href="/docs/rules/GCI0016"
-                className="text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                GCI0016 - Concurrency and State Risk
-              </Link>
-              . The rule flags{" "}
-              <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded">
-                Thread.Sleep
-              </code>{" "}
-              inside async methods, unsynchronized static mutable state, and other
-              patterns that cause thread pool starvation or data races.
-            </p>
-          </section>
-
-          {/* Navigation */}
-          <div className="border-t border-border pt-10 flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/articles/case-studies"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold hover:bg-card/80 transition-colors"
-            >
-              ← All case studies
-            </Link>
-            <Link
-              href="/docs"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-500 px-6 py-3 text-sm font-semibold text-background hover:bg-cyan-400 transition-colors"
-            >
-              Get started free
-            </Link>
-          </div>
-
-        </div>
-      </main>
-      <Footer />
-    </>
+              <p>
+                That means derived fixtures can begin inheriting cancellation or timeout behavior from
+                a base class. The change may be correct, but it is externally observable for any test
+                suite that depends on NUnit inheritance behavior.
+              </p>
+            </>
+          ),
+        },
+        {
+          title: "Why this is risky",
+          children: (
+            <>
+              <p>
+                Timeout and cancellation metadata controls execution, not just documentation. A base
+                fixture decorated with
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> [CancelAfter]</code>
+                can now change the runtime behavior of every derived test. Long-running async tests may
+                start receiving cancellation that they previously ignored.
+              </p>
+              <p>
+                The diff is deceptively small. A reviewer scanning for blocking calls will not see
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> Thread.Sleep</code>
+                or
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> .Wait()</code>.
+                The risk is encoded in attribute metadata.
+              </p>
+            </>
+          ),
+        },
+        {
+          title: "What the original thin page got wrong",
+          children: (
+            <>
+              <p>
+                The old page claimed PR #5192 introduced
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> Thread.Sleep</code>
+                and static mutable state. The verified diff does not support that. The closest file
+                uses an existing
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> AutoResetEvent.WaitOne()</code>
+                pattern in tests, not a newly added sleep.
+              </p>
+              <p>
+                Keeping this as a case study is still useful if it is framed honestly: it documents a
+                rule-design gap and a class of behavior change that deserves a future detector.
+              </p>
+            </>
+          ),
+        },
+      ]}
+      diffTitle="Diff evidence"
+      diffFile="src/NUnitFramework/framework/Attributes"
+      diffLines={diffLines}
+      findingTitle="What a better detector would ask"
+      findingBody={findingBody}
+      caveats={[
+        "Current GCI0016 would not fire on this PR; there was no added Thread.Sleep, async blocking call, lock(this), or async void pattern.",
+        "The inheritance change appears intentional and may be a bug fix, not a regression.",
+        "This page is now a coverage-gap case study rather than a claim that GauntletCI would have blocked PR #5192.",
+      ]}
+      nextActions={[
+        "Review inherited timeout/cancellation behavior with derived fixture tests before merging framework changes.",
+        "Add release notes for behavior changes caused by attribute metadata, even when method bodies do not change.",
+        "Consider a future rule for high-impact AttributeUsage changes on test framework attributes.",
+      ]}
+      sources={[
+        { label: "PR #5192", href: "https://github.com/nunit/nunit/pull/5192" },
+        { label: "Rule GCI0003", href: "https://gauntletci.com/docs/rules/GCI0003" },
+      ]}
+    />
   );
 }
-
-

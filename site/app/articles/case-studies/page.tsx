@@ -8,9 +8,9 @@ import { AuthorBio } from "@/components/author-bio";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 
 export const metadata: Metadata = {
-  title: "OSS Case Studies | GauntletCI Catches Real Bugs",
+  title: "OSS Case Studies | GauntletCI Behavioral Risk Analysis",
   description:
-    "Five real .NET open-source pull requests where GauntletCI catches swallowed exceptions, broken APIs, concurrency bugs, and hardcoded configuration before merge.",
+    "Five deeply researched .NET open-source pull requests showing swallowed exceptions, nullable API changes, serialization risk, timeout inheritance, and telemetry review signals.",
   alternates: { canonical: "/articles/case-studies" },
   openGraph: { images: [{ url: "/og/case-studies.png", width: 1200, height: 630 }] },
 };
@@ -20,7 +20,7 @@ const jsonLd = {
   "@type": "CollectionPage",
   name: "GauntletCI OSS Case Studies",
   description:
-    "Five real .NET open-source pull requests where GauntletCI catches swallowed exceptions, broken APIs, concurrency bugs, and hardcoded configuration before merge.",
+    "Five deeply researched .NET open-source pull requests showing behavioral risk, API contract changes, and honest coverage gaps.",
   url: "https://gauntletci.com/articles/case-studies",
 };
 
@@ -28,52 +28,52 @@ const studies = [
   {
     href: "/articles/case-studies/stackexchange-redis-swallowed-exception",
     repo: "StackExchange/StackExchange.Redis",
-    pr: "PR#2995",
+    pr: "PR #2995",
     rules: ["GCI0007"],
     severity: "BLOCK",
     summary:
-      "Swallowed exception silences connection failures in production Redis client",
-    tags: ["Error Handling", "Concurrency"],
+      "Keyspace notification PR surfaces swallowed subscriber-handler exceptions",
+    tags: ["Error Handling", "Pub/Sub"],
   },
   {
     href: "/articles/case-studies/newtonsoft-json-assignment-in-getter",
     repo: "JamesNK/Newtonsoft.Json",
-    pr: "PR#1950",
-    rules: ["GCI0036", "GCI0004"],
-    severity: "BLOCK",
+    pr: "PR #1950",
+    rules: ["GCI0043", "GCI0055", "GCI0003"],
+    severity: "REVIEW",
     summary:
-      "Mutation inside a property getter breaks the side-effect-free contract",
-    tags: ["API Contracts", "Behavioral Correctness"],
+      "Nullable migration changes public annotations and fixes null-parent behavior",
+    tags: ["Nullability", "API Contracts"],
   },
   {
     href: "/articles/case-studies/efcore-breaking-api-removal",
     repo: "dotnet/efcore",
-    pr: "PR#38024",
-    rules: ["GCI0004", "GCI0003"],
-    severity: "BLOCK",
+    pr: "PR #38024",
+    rules: ["GCI0004", "GCI0003", "GCI0015"],
+    severity: "BLOCK/REVIEW",
     summary:
-      "Public API removed without Obsolete - breaks all EF Core provider authors",
-    tags: ["Breaking Changes", "API Contracts"],
+      "Cosmos serialization rewrite raises obsolete-API and data-preservation questions",
+    tags: ["Cosmos DB", "Serialization"],
   },
   {
     href: "/articles/case-studies/nunit-thread-sleep-async",
     repo: "nunit/nunit",
-    pr: "PR#5192",
-    rules: ["GCI0016"],
-    severity: "BLOCK",
+    pr: "PR #5192",
+    rules: ["GCI0003"],
+    severity: "COVERAGE GAP",
     summary:
-      "Thread.Sleep in async context in the NUnit test framework source itself",
-    tags: ["Concurrency", "Async"],
+      "Timeout attribute inheritance changes derived fixture behavior without matching GCI0016",
+    tags: ["Async Tests", "Rule Design"],
   },
   {
     href: "/articles/case-studies/azuread-hardcoded-authority",
     repo: "AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet",
-    pr: "PR#3410",
-    rules: ["GCI0010", "GCI0003"],
-    severity: "BLOCK",
+    pr: "PR #3410",
+    rules: ["GCI0055", "GCI0003"],
+    severity: "REVIEW",
     summary:
-      "Hardcoded authority URL in production identity model code",
-    tags: ["Configuration", "Security"],
+      "Signature validation telemetry adds issuer allowlisting and validation call-path changes",
+    tags: ["Telemetry", "Security"],
   },
 ];
 
@@ -98,9 +98,9 @@ export default function CaseStudiesPage() {
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed text-pretty">
               Five real pull requests from the most-downloaded .NET open-source
-              libraries. Each one contains a finding that GauntletCI would block
-              before merge - a swallowed exception, a broken public API, a
-              concurrency hazard, or hardcoded configuration.
+              libraries. Each study now separates verified GauntletCI findings
+              from reviewer questions and coverage gaps, so the evidence is useful
+              without overstating what the rules detect.
             </p>
           </div>
 
@@ -162,14 +162,16 @@ export default function CaseStudiesPage() {
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               These are not contrived examples. Each finding comes from a real pull
-              request to a library with hundreds of millions of downloads. The bugs
-              listed are not theoretical - they represent classes of production
-              incident that have affected downstream applications.
+              request to a library with hundreds of millions of downloads. Some are
+              block-level findings; others are deliberately documented as reviewer
+              questions or rule gaps where the honest lesson is more valuable than a
+              forced marketing claim.
             </p>
             <p className="text-muted-foreground leading-relaxed">
               GauntletCI analyzes the diff, not the full codebase. These findings
-              would have been produced in seconds, deterministically, on every pull
-              request against these repositories.
+              and review prompts are grounded in the changed lines: swallowed errors,
+              API annotations, obsolete contracts, serialization behavior, and
+              validation call-path changes.
             </p>
             <p className="text-muted-foreground leading-relaxed">
               For the broader dataset behind these examples, read the{" "}
@@ -203,7 +205,7 @@ export default function CaseStudiesPage() {
             </Link>
           </div>
 
-          <RulesApplied ids={["GCI0003", "GCI0004", "GCI0007", "GCI0010", "GCI0016", "GCI0036"]} />
+          <RulesApplied ids={["GCI0003", "GCI0004", "GCI0006", "GCI0007", "GCI0015", "GCI0043", "GCI0055"]} />
           <AuthorBio variant="long" />
         </div>
       </main>

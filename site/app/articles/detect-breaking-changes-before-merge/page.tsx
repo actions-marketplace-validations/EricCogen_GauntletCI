@@ -628,8 +628,8 @@ export default function DetectBreakingChangesPage() {
           <section className="space-y-4 border-t border-border pt-12">
             <h2 className="text-xl font-bold tracking-tight">Real-world examples from .NET OSS</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              These case studies show GauntletCI catching the exact patterns described above in
-              real pull requests to widely-used .NET libraries.
+              These case studies show how diff-scoped review surfaces real compatibility and
+              behavior questions in widely-used .NET libraries without overstating the finding.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Link
@@ -638,13 +638,13 @@ export default function DetectBreakingChangesPage() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-mono text-xs text-muted-foreground/60">dotnet/efcore</span>
-                  <span className="font-mono text-xs text-muted-foreground/40">PR#38024</span>
+                  <span className="font-mono text-xs text-muted-foreground/40">PR #38024</span>
                 </div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">
-                  Breaking API Removal in EF Core
+                  Cosmos Serialization Modernization in EF Core
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  GCI0004 catches public method removal without [Obsolete] - breaks all third-party EF Core database providers.
+                  GCI0004 and GCI0015 surface public deprecation and Cosmos JSON preservation questions in PR #38024.
                 </p>
               </Link>
               <Link
@@ -653,13 +653,13 @@ export default function DetectBreakingChangesPage() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-mono text-xs text-muted-foreground/60">JamesNK/Newtonsoft.Json</span>
-                  <span className="font-mono text-xs text-muted-foreground/40">PR#1950</span>
+                  <span className="font-mono text-xs text-muted-foreground/40">PR #1950</span>
                 </div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">
-                  Assignment in Getter - Newtonsoft.Json
+                  Nullable Migration in Newtonsoft.Json
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  GCI0004 and GCI0036 catch a property getter that mutates state, breaking the side-effect-free contract.
+                  GCI0043, GCI0055, and GCI0003 highlight nullable API-surface changes and a parentless-token behavior fix.
                 </p>
               </Link>
             </div>

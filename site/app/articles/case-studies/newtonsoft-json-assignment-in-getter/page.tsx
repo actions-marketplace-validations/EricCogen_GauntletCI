@@ -1,240 +1,141 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import JsonLd from "@/components/json-ld";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { CaseStudyLayout } from "../_components/case-study-layout";
 
 export const metadata: Metadata = {
-  title: "Case Study: Assignment in Getter in Newtonsoft.Json | GauntletCI",
+  title: "Case Study: Nullable Migration in Newtonsoft.Json | GauntletCI",
   description:
-    "GauntletCI catches a property getter mutation in Newtonsoft.Json PR#1950. Rule GCI0036 - mutations in getters break the side-effect-free contract assumed by reflection and serialization frameworks.",
+    "A corrected deep dive into Newtonsoft.Json PR #1950, a 169-file nullable reference type migration that changed public annotations and fixed real null edge cases.",
   alternates: { canonical: "/articles/case-studies/newtonsoft-json-assignment-in-getter" },
   openGraph: { images: [{ url: "/og/case-studies.png", width: 1200, height: 630 }] },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Article",
-  headline: "Case Study: Assignment in Getter in Newtonsoft.Json",
-  description:
-    "GauntletCI catches a property getter mutation in Newtonsoft.Json PR#1950. Rule GCI0036 - mutations in getters break the side-effect-free contract assumed by reflection and serialization frameworks.",
-  url: "https://gauntletci.com/articles/case-studies/newtonsoft-json-assignment-in-getter",
-  author: { "@type": "Organization", name: "GauntletCI" },
-  publisher: { "@type": "Organization", name: "GauntletCI", url: "https://gauntletci.com" },
-  datePublished: "2025-05-03"
-};
-
-const lineColor: Record<string, string> = {
-  added: "bg-green-500/10 text-green-300",
-  removed: "bg-red-500/10 text-red-300",
-  context: "text-muted-foreground/60",
-};
-
-const linePrefix: Record<string, string> = {
-  added: "+",
-  removed: "-",
-  context: " ",
-};
-
-const diff: { type: string; line: string }[] = [
-  { type: "context", line: "// Added in XmlNodeConverter.cs" },
-  { type: "added", line: "public string NodeType" },
+const diffLines = [
+  { type: "context", line: "// JToken.Parent became nullable" },
+  { type: "removed", line: "private JContainer _parent;" },
+  { type: "added", line: "private JContainer? _parent;" },
+  { type: "removed", line: "public JContainer Parent" },
+  { type: "added", line: "public JContainer? Parent" },
+  { type: "context", line: "" },
+  { type: "context", line: "// BeforeSelf() now handles parentless tokens" },
+  { type: "added", line: "if (Parent == null)" },
   { type: "added", line: "{" },
-  { type: "added", line: "    get" },
-  { type: "added", line: "    {" },
-  { type: "added", line: "        _nodeType = GetCurrentNodeType();  // GCI0036: mutation in getter" },
-  { type: "added", line: "        return _nodeType;" },
-  { type: "added", line: "    }" },
+  { type: "added", line: "    yield break;" },
   { type: "added", line: "}" },
+  { type: "removed", line: "for (JToken o = Parent.First; o != this; o = o.Next)" },
+  { type: "added", line: "for (JToken? o = Parent.First; o != this && o != null; o = o.Next)" },
+  { type: "context", line: "" },
+  { type: "context", line: "// JProperty.Value getter stayed pure; it only added null-forgiving annotation" },
+  { type: "removed", line: "get { return _content._token; }" },
+  { type: "added", line: "get { return _content._token!; }" },
 ];
 
-const finding = [
-  "[GCI0036] Pure Context Mutation",
-  "Location : src/Newtonsoft.Json/Converters/XmlNodeConverter.cs",
-  "Summary  : Assignment in getter - mutation in a pure context.",
-  "Evidence : _nodeType = GetCurrentNodeType();",
-  "Why      : Property getters are expected to be side-effect free. Mutations break",
-  "           this contract and can cause subtle bugs with lazy initialization,",
-  "           caching, or framework reflection.",
-  "Action   : Move state mutations to setter, constructor, or a dedicated method.",
+const findingBody = [
+  "[GCI0043] Nullability and Type Safety",
+  "Signal   : nullable annotations, null-forgiving operators, and warning suppressions changed",
+  "",
+  "[GCI0055] Method Signature Change Risk",
+  "Signal   : public API annotations changed, e.g. JContainer -> JContainer?",
+  "",
+  "[GCI0003/GCI0006] Behavioral and edge-case change",
+  "Signal   : BeforeSelf() no longer throws for a parentless token; it returns an empty sequence",
 ].join("\n");
 
 export default function NewtonsoftJsonAssignmentInGetterPage() {
   return (
-    <>
-      <JsonLd data={jsonLd} />
-      <Header />
-      <main className="min-h-screen bg-background pt-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20 space-y-16">
-
-          {/* Hero */}
-          <div className="space-y-5 border-b border-border pb-12">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-400">
-                Case Study
+    <CaseStudyLayout
+      title="Nullable Migration in Newtonsoft.Json"
+      description="PR #1950 was not an assignment-in-getter bug. It was a large nullable reference type migration that changed API annotations across Newtonsoft.Json and fixed real null-parent behavior in JToken.BeforeSelf()."
+      canonicalPath="/articles/case-studies/newtonsoft-json-assignment-in-getter"
+      repo="JamesNK/Newtonsoft.Json"
+      pr="PR #1950"
+      prUrl="https://github.com/JamesNK/Newtonsoft.Json/pull/1950"
+      outcomeLabel="REVIEW"
+      outcomeTone="yellow"
+      tags={["Nullability", "API Contracts", "Edge Cases"]}
+      ruleIds={["GCI0043", "GCI0055", "GCI0003", "GCI0006"]}
+      stats={[
+        { value: "169", label: "files changed" },
+        { value: "7 mo", label: "PR lifetime" },
+        { value: "2", label: "NRE fixes noted" },
+      ]}
+      sections={[
+        {
+          title: "What changed",
+          children: (
+            <>
+              <p>
+                The pull request enabled nullable reference type annotations across the library. It
+                changed fields, return types, method parameters, indexers, and test expectations in one
+                broad migration. The PR body also called out two null-reference bugs discovered during
+                the work: <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded">JToken.BeforeSelf()</code>
+                and null XML node converter serialization.
               </p>
-              <Link
-                href="/articles/case-studies"
-                className="text-sm text-muted-foreground hover:text-cyan-400 transition-colors"
-              >
-                ← All case studies
-              </Link>
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-balance">
-              Assignment in Getter in Newtonsoft.Json
-            </h1>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-sm text-muted-foreground">
-                JamesNK/Newtonsoft.Json
-              </span>
-              <a
-                href="https://github.com/JamesNK/Newtonsoft.Json/pull/1950"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                PR#1950 ↗
-              </a>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/docs/rules/GCI0036"
-                className="font-mono text-xs font-medium px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors"
-              >
-                GCI0036
-              </Link>
-              <Link
-                href="/docs/rules/GCI0004"
-                className="font-mono text-xs font-medium px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors"
-              >
-                GCI0004
-              </Link>
-              <span className="text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
-                BLOCK
-              </span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                API Contracts
-              </span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                Behavioral Correctness
-              </span>
-            </div>
-          </div>
-
-          {/* Context */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight">Context</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Newtonsoft.Json PR#1950 modified{" "}
-              <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded">
-                XmlNodeConverter.cs
-              </code>
-              . It introduced a property getter that also performs a write -
-              assigning a value inside what should be a pure read operation.
-              Property getters are expected to be side-effect-free. When a getter
-              mutates state, callers using reflection, lazy initialization, caching
-              layers, or serialization frameworks may observe inconsistent behavior
-              because they assume reads are safe to repeat without side effects.
-            </p>
-          </section>
-
-          {/* Diff */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight">Diff evidence</h2>
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="border-b border-border bg-card/60 px-4 py-2 flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500/40" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/40" />
-                </div>
-                <span className="text-xs font-mono text-muted-foreground/40 ml-1">
-                  src/Newtonsoft.Json/Converters/XmlNodeConverter.cs
-                </span>
-              </div>
-              <div className="p-4 font-mono text-xs leading-relaxed space-y-0.5 bg-background/50">
-                {diff.map((line, i) => (
-                  <div
-                    key={i}
-                    className={`flex gap-2 px-2 py-0.5 rounded ${lineColor[line.type]}`}
-                  >
-                    <span className="shrink-0 w-3 select-none">
-                      {linePrefix[line.type]}
-                    </span>
-                    <span className="whitespace-pre">{line.line}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t border-border bg-red-500/5 px-4 py-3">
-                <pre className="text-xs font-mono text-red-400 leading-relaxed whitespace-pre-wrap">
-                  {finding}
-                </pre>
-              </div>
-            </div>
-          </section>
-
-          {/* Why it matters */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight">Why it matters</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Newtonsoft.Json is the most downloaded NuGet package ever, with well
-              over 3 billion downloads. Any serialization framework, ORM, or
-              reflection-based tool that reads this property twice may see different
-              values if the underlying state changes between reads. JSON.NET itself
-              reads node properties repeatedly during traversal. A getter that
-              writes state creates a timing dependency between reads - a class of
-              bug that is nearly impossible to reproduce in unit tests (which call
-              the getter once in a controlled sequence) but surfaces intermittently
-              in production under concurrent serialization workloads.
-            </p>
-          </section>
-
-          {/* Rule links */}
-          <section className="border-t border-border pt-10 space-y-4">
-            <h2 className="text-lg font-semibold">Detection rules</h2>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link
-                  href="/docs/rules/GCI0036"
-                  className="text-cyan-400 hover:text-cyan-300 transition-colors"
-                >
-                  GCI0036 - Pure Context Mutation
-                </Link>{" "}
-                - flags assignments inside property getters.
-              </li>
-              <li>
-                <Link
-                  href="/docs/rules/GCI0004"
-                  className="text-cyan-400 hover:text-cyan-300 transition-colors"
-                >
-                  GCI0004 - Breaking Change Risk
-                </Link>{" "}
-                - flags public API changes that break callers.
-              </li>
-            </ul>
-          </section>
-
-          {/* Navigation */}
-          <div className="border-t border-border pt-10 flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/articles/case-studies"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold hover:bg-card/80 transition-colors"
-            >
-              ← All case studies
-            </Link>
-            <Link
-              href="/docs"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-500 px-6 py-3 text-sm font-semibold text-background hover:bg-cyan-400 transition-colors"
-            >
-              Get started free
-            </Link>
-          </div>
-
-        </div>
-      </main>
-      <Footer />
-    </>
+              <p>
+                The most important reviewer signal is not a hidden getter mutation. It is the
+                combination of public annotation changes and observable behavior changes in a library
+                that millions of downstream projects compile against.
+              </p>
+            </>
+          ),
+        },
+        {
+          title: "Why this is risky",
+          children: (
+            <>
+              <p>
+                Nullable annotations are source-compatible at runtime, but they are still an API
+                contract. A return type moving from non-nullable to nullable changes compiler warnings
+                for consumers in nullable-aware projects. That can break warning-as-error builds even
+                when binaries continue to load.
+              </p>
+              <p>
+                The <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded">BeforeSelf()</code>
+                fix is a good behavioral change: parentless tokens now return an empty sequence instead
+                of throwing. But it is still externally observable behavior and deserves a regression
+                test, which the PR added.
+              </p>
+            </>
+          ),
+        },
+        {
+          title: "What the original thin page got wrong",
+          children: (
+            <>
+              <p>
+                The old case-study framing said this PR added an assignment inside a property getter.
+                The verified diff does not support that. The relevant getter change was
+                <code className="font-mono text-sm text-foreground/80 bg-muted px-1 py-0.5 rounded"> return _content._token!;</code>,
+                which is a null-forgiving annotation, not a mutation.
+              </p>
+              <p>
+                Correcting that premise makes the case study stronger: it shows that high-quality case
+                studies should explain the actual risk, even when that means replacing a more dramatic
+                but inaccurate claim.
+              </p>
+            </>
+          ),
+        },
+      ]}
+      diffTitle="Diff evidence"
+      diffFile="Src/Newtonsoft.Json/Linq/JToken.cs and JProperty.cs"
+      diffLines={diffLines}
+      findingTitle="Accurate GauntletCI review signals"
+      findingBody={findingBody}
+      caveats={[
+        "GCI0036 Pure Context Mutation would not fire on this PR; the getter body did not add an assignment.",
+        "GCI0004 Breaking Change Risk would not fire either; the PR did not add or remove an Obsolete attribute.",
+        "The nullable migration fixed real null edge cases, so the review question is contract impact and regression coverage, not whether the change is inherently bad.",
+      ]}
+      nextActions={[
+        "Review public nullable annotation changes as API-surface changes, especially for consumers using warnings as errors.",
+        "Keep the new BeforeSelf() parentless-token regression tests tied to the behavior change.",
+        "Audit null-forgiving operators and warning suppressions added during the migration; each one is a promise to the compiler.",
+      ]}
+      sources={[
+        { label: "PR #1950", href: "https://github.com/JamesNK/Newtonsoft.Json/pull/1950" },
+        { label: "Rule GCI0043", href: "https://gauntletci.com/docs/rules/GCI0043" },
+        { label: "Rule GCI0055", href: "https://gauntletci.com/docs/rules/GCI0055" },
+      ]}
+    />
   );
 }
-
-
