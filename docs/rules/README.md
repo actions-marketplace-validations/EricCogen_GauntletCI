@@ -20,7 +20,7 @@ A finding is not a claim that the code is definitely broken. A finding is eviden
 | [GCI0007](GCI0007-error-handling-integrity.md) | Error Handling Integrity | Observability and Failure Handling | Stable |
 | [GCI0010](GCI0010-hardcoding-and-configuration.md) | Hardcoding and Configuration | Security and Configuration | Stable |
 
-For the full rule reference including all 30 rules, see [docs/rules.md](../rules.md).
+For the full evolving rule reference, see [docs/rules.md](../rules.md).
 
 ## Best Practices Guide
 

@@ -29,7 +29,7 @@ This document is prepared for an independent third-party review of the GauntletC
 
 2. **Should any rules be adjusted?** A rule may be detecting the right *category* of risk but using patterns that are too loose (causing false positives), too strict (missing real cases), or calibrated at the wrong confidence level. If the detection logic needs narrowing or the confidence level is wrong, tell us.
 
-3. **Are there important risk categories we have missed?** We have 30 rules today. We do not believe this is exhaustive. If you can identify a class of risk that regularly causes production incidents, security vulnerabilities, or data loss: and that a diff-level static analysis could plausibly detect: we want to add it.
+3. **Are there important risk categories we have missed?** We maintain 30+ rules today, and the catalog continues to evolve. We do not believe this is exhaustive. If you can identify a class of risk that regularly causes production incidents, security vulnerabilities, or data loss: and that a diff-level static analysis could plausibly detect: we want to add it.
 
 ### What GauntletCI is (and is not)
 
