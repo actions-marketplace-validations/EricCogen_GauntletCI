@@ -24,6 +24,11 @@ artifacts/
 # Graphify knowledge graph (regenerable analysis artifact, stored in ~/.gauntletci/graphify/)
 graphify-out/
 
+# Cursor agent config (optional commit — un-ignore rules under .cursor/)
+!.cursor/
+!.cursor/**/*
+!.cursor/**/*.mdc
+
 # GauntletCI model cache (Phi-4 Mini ONNX — ~2.8 GB, never commit)
 .gauntletci/
 **/*.onnx
@@ -173,3 +178,8 @@ site/tsconfig.tsbuildinfo
 *.zip
 *.7z
 .aider*
+
+# Cursor agent config — allow commit after global *.md ignore above
+!.cursor/**/*.md
+!.cursor/**/*.mdc
+!.cursor/skills/**/SKILL.md
