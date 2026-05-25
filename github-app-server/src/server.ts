@@ -333,18 +333,22 @@ async function postIssueComment(repository: GitHubRepo, issueNumber: number, bod
   );
 }
 
-async function cloneRepository(repository: GitHubRepo, headSha: string, repoDir: string, token: string): Promise<void> {
+function gitAuthConfig(token: string): string[] {
   const authHeader = Buffer.from(`x-access-token:${token}`).toString("base64");
+  return ["-c", `http.https://github.com/.extraheader=AUTHORIZATION: basic ${authHeader}`];
+}
+
+async function cloneRepository(repository: GitHubRepo, headSha: string, repoDir: string, token: string): Promise<void> {
+  const auth = gitAuthConfig(token);
+  // Avoid --filter=blob:none: checkout fetches blobs via promisor remote without inherited auth in Docker.
   await runProcess("git", [
-    "-c",
-    `http.https://github.com/.extraheader=AUTHORIZATION: basic ${authHeader}`,
+    ...auth,
     "clone",
     "--no-checkout",
-    "--filter=blob:none",
     repository.clone_url,
     repoDir,
   ]);
-  await runProcess("git", ["checkout", headSha], { cwd: repoDir });
+  await runProcess("git", [...auth, "checkout", headSha], { cwd: repoDir });
 }
 
 async function runGauntletCI(diffPath: string, repoDir: string): Promise<{ exitCode: number; stdout: string; stderr: string }> {
