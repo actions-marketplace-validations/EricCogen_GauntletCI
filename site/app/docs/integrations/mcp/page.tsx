@@ -286,7 +286,7 @@ export default function McpPage() {
               },
               {
                 role: "assistant",
-                text: "I ran GauntletCI on the current HEAD commit. It found 3 issues:\n\n[Block] GCI0001 in OrderService.cs:44 - Behavior change without test coverage. SaveAsync was modified but no test file covering OrderService was updated. Add a test covering the new behavior before merging.\n\n[Block] GCI0003 in PaymentService.cs:112 - A new exception path was introduced but no call sites were updated to handle it. This may cause unhandled exceptions in production.\n\n[Warn] GCI0004 in Models/Order.cs:23 - Return type semantics changed from non-nullable to nullable. Callers may not be checking for null.",
+                text: "I ran GauntletCI on the current HEAD commit. It found 3 issues:\n\n[Warn] GCI0001 — Diff contains mixed scope (code and docs changed together).\n\n[Block] GCI0003 — 2 method signatures changed (incompatible) in OrderService.cs.\n\n[Warn] GCI0004 — [Obsolete] added on GetOrder; verify migration message and callers.",
               },
               {
                 role: "user",

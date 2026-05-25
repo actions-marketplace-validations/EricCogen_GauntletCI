@@ -19,6 +19,21 @@ Rules do not modify code and do not block merges on their own. They surface info
 
 **How rules are configured**: Rules run automatically against every diff. Per-repository configuration can disable individual rules or adjust their severity. See the Configuration Reference section at the end of this document.
 
+**Default severity:** Each active rule has a built-in Block, Warn, or Info default in `DefaultSeverities.cs`. Some rules (GCI0003, GCI0004) also set per-finding `SeverityOverride` for finer calibration. Rules with default **None** (GCI0054, GCI0055) are not executed unless you raise their severity in config.
+
+---
+
+## Implementation status
+
+| Category | Count | Rule IDs |
+|----------|------:|----------|
+| **Active** (emit findings by default) | 34 | GCI0001, GCI0003–GCI0007, GCI0010, GCI0012, GCI0015–GCI0016, GCI0020–GCI0022, GCI0024, GCI0029, GCI0032, GCI0035–GCI0036, GCI0038–GCI0039, GCI0041–GCI0049, GCI0050–GCI0053, GCI0056–GCI0057 |
+| **Implemented, disabled by default** | 2 | GCI0054 (async void — use GCI0016), GCI0055 (regex signatures — use GCI0003) |
+| **Reserved / consolidated** | 3 | GCI0028 (unassigned), GCI0030 (→ GCI0024), GCI0033 (→ GCI0016) |
+| **Documented below, not yet implemented** | 18 | GCI0002, GCI0005, GCI0008–GCI0009, GCI0011, GCI0013–GCI0014, GCI0017–GCI0019, GCI0023, GCI0025–GCI0027, GCI0031, GCI0034, GCI0037, GCI0040 |
+
+Sections marked **Status: Not yet implemented** describe planned behavior only. The engine discovers rules via reflection on `IRule` classes under `Rules/Implementations/`; IDs without a class never run, regardless of `.gauntletci.json`.
+
 ---
 
 ## Reviewer Guide
@@ -86,6 +101,8 @@ These rules examine the shape of the diff itself rather than the code it contain
 
 ### GCI0002 · Goal Alignment
 
+**Status:** Not yet implemented (spec only)
+
 **Confidence:** Low
 **What it detects:** Two checks. First, it compares keywords in the commit message against the paths of changed files. If the diff touches more than three files and no words from the commit message appear in any of the file paths, it flags a possible mismatch between the stated purpose and the actual change. Second, if the diff touches more than five files and spans at least three of the four categories: frontend, backend, configuration, and tests: it flags an overly broad scope.
 **Why it matters:** Commits that do not match their description break `git blame` traceability and confuse future investigators. Cross-cutting changes are harder to review and harder to roll back.
@@ -94,6 +111,8 @@ These rules examine the shape of the diff itself rather than the code it contain
 ---
 
 ### GCI0017 · Scope Discipline
+
+**Status:** Not yet implemented (spec only)
 
 **Confidence:** Low
 **What it detects:** Two checks. First, it counts how many distinct top-level directories are affected by the diff across all changed files, including non-code files. If three or more top-level directories are touched, it flags the diff as spanning too many modules. Second, it checks whether production code files and non-production files: such as database migrations, seed data, or test fixtures: are changed in the same diff.
@@ -104,6 +123,8 @@ These rules examine the shape of the diff itself rather than the code it contain
 
 ### GCI0019 · Confidence and Evidence
 
+**Status:** Not yet implemented (spec only)
+
 **Confidence:** Low
 **What it detects:** Two checks. First, it identifies binary files: such as images, PDFs, compiled executables, or font files: included in the diff, since their contents cannot be inspected by static analysis. Second, it runs as a post-processor after all other rules: if the diff changes more than 200 lines but no other rules produced findings, it flags the possibility of hidden risks that deterministic rules did not catch.
 **Why it matters:** Binary files cannot be scanned for credentials, logic errors, or security issues using text-based analysis. Large diffs with no findings may simply mean the code is clean, but they may also mean the risks are subtle enough to evade automated checks.
@@ -111,12 +132,19 @@ These rules examine the shape of the diff itself rather than the code it contain
 
 ---
 
-### GCI0020 · Accountability Standard
+### GCI0020 · Resource Exhaustion Pattern Detection
 
+**Default severity:** Block
 **Confidence:** High / Medium
-**What it detects:** Four checks. First, it scans added lines for credential patterns: variable names like `password`, `secret`, `apikey`, or `token` assigned a string literal. Second, it looks for blocks of five or more consecutive comment lines in newly added code, which often indicates commented-out code being left in place. Third, it detects authorization attributes with an empty roles string, which signals a misconfigured access control decorator that may grant access more broadly than intended. Fourth, it checks for code that appears after a `return` or `throw` statement: unreachable lines that indicate a logic error.
-**Why it matters:** Credentials in source code are permanently captured in version control even after removal. Commented-out code creates confusion and suggests incomplete cleanup. An empty roles string in an authorization decorator may silently allow all authenticated users into a restricted endpoint. Unreachable code indicates broken logic.
-**Suggested action:** Remove credential literals and use a secrets manager. Delete commented-out code: version control preserves history. Correct or remove the empty roles string. Fix or remove unreachable code.
+**What it detects:** Timeout or iteration-limit removal, unbounded resource limit increases, cleanup/disposal removal, and async operations without bounds.
+**Why it matters:** Removing timeouts and iteration guards enables denial-of-service and resource exhaustion under adversarial or accidental load.
+**Suggested action:** Restore timeout/deadline protection or document why the operation is bounded by other means.
+
+---
+
+### GCI0020 (legacy doc note)
+
+The former "Accountability Standard" checks (credentials in literals, commented-out code blocks, empty `[Authorize(Roles = "")]`, unreachable code) are not part of the current GCI0020 implementation. Security credential patterns are primarily covered by **GCI0010** and **GCI0012**.
 
 ---
 
@@ -128,23 +156,27 @@ These rules examine logic changes that could alter how the software behaves at r
 
 ### GCI0003 · Behavioral Change Detection
 
-**Confidence:** Medium
-**What it detects:** Two checks. First, if three or more lines containing control-flow keywords: such as conditional statements, return statements, or boolean operators: are removed from non-test files without any corresponding test file changes in the same diff, it flags the removal as potentially untested. Second, it compares the signatures of methods that exist in both the removed and added lines of the same file; if a method's parameter list changed, it reports the before-and-after signature.
-**Why it matters:** Deleting conditional logic without updating tests can silently break behavior that was previously protected by test coverage. Signature changes can break other code that calls the method but was not included in this diff.
-**Suggested action:** Update or add tests to verify that removed logic paths are intentionally gone. Confirm all callers of changed signatures are updated, and consider adding a backward-compatible overload.
+**Default severity:** Block for incompatible signatures; Warn for logic removal without tests; Info for backward-compatible extensions
+**Confidence:** Medium / Low / High (cryptographic boundary changes)
+**What it detects:** Logic removal without test changes (15+ control-flow lines), incompatible method signature changes (with cross-file dedup), backward-compatible signature extensions, and cryptographic boundary argument changes.
+**Why it matters:** Deleting conditional logic without updating tests can silently break behavior. Incompatible signature changes break callers. Compatible extensions still warrant review for positional-argument callers.
+**Suggested action:** Update or add tests for removed logic. Confirm callers of changed signatures are updated; prefer overloads for backward compatibility.
 
 ---
 
 ### GCI0004 · Breaking Change Risk
 
-**Confidence:** High / Medium
-**What it detects:** Two checks. First, it identifies public members: methods, classes, interfaces, structs, records, enums, and properties: that appear in the removed lines of a file but not in the added lines. These are treated as deleted public APIs. If the member also appears in the added lines but with a different signature, it is treated as a changed public API instead of a deleted one. Second, it looks for removed deprecation markers that previously signaled a member was scheduled for removal.
-**Why it matters:** Removing or changing a public member is a breaking change for any code that depends on it: including external consumers of a library who are not part of this repository. Removing a deprecation marker without completing the removal may leave consumers with no warning.
-**Suggested action:** Mark deprecated members as obsolete before removing them, and coordinate removal with a major version increment. Verify the deprecation marker removal is intentional and all consumers have migrated.
+**Default severity:** Warn; Block when `[Obsolete]` is removed
+**Confidence:** Medium
+**What it detects:** `[Obsolete]` attribute added to or removed from members in production C# files.
+**Why it matters:** Adding `[Obsolete]` locks in a deprecation contract. Removing `[Obsolete]` may strip a deprecation guard before downstream consumers have migrated.
+**Suggested action:** Ensure `[Obsolete]` messages name a successor. Confirm removal is intentional and external callers have migrated.
 
 ---
 
 ### GCI0005 · Test Coverage Relevance
+
+**Status:** Not yet implemented (spec only)
 
 **Confidence:** Medium
 **What it detects:** Two checks. First, if the diff modifies production code files but contains no changes to test files, it flags the absence of test changes. Second, if the diff modifies test files but contains no changes to production code files, it flags the test changes as potentially orphaned.
@@ -172,6 +204,8 @@ These rules examine logic changes that could alter how the software behaves at r
 ---
 
 ### GCI0008 · Complexity Control
+
+**Status:** Not yet implemented (spec only). Overlapping concerns are partially covered by **GCI0045**.
 
 **Confidence:** Low
 **What it detects:** Three checks. First, it tracks brace nesting depth across added lines in each file; if any point in the added code reaches more than four levels of nesting, it flags the file. Second, it identifies method-like blocks in the added code that contain more than thirty lines. Third, it looks for lines that appear three or more times verbatim across all added lines in the diff, which suggests duplicated logic.
@@ -216,6 +250,8 @@ These rules detect patterns with direct security or regulatory consequences. Fin
 
 ### GCI0014 · Rollback Safety
 
+**Status:** Not yet implemented (spec only)
+
 **Confidence:** High / Medium
 **What it detects:** Three checks. Database Data Definition Language (DDL) statements: such as dropping tables, truncating data, dropping columns, or dropping indexes: in added lines. File deletion and process-termination API calls. Database migration files that define an upgrade path without a corresponding rollback path.
 **Why it matters:** DDL statements that destroy or restructure data cannot be undone once executed in most database engines. File deletion is permanent unless backups exist. A migration with no rollback method means that reverting a bad deployment requires manual intervention rather than a single automated command.
@@ -248,6 +284,8 @@ These rules detect patterns that cause performance degradation, data corruption,
 ---
 
 ### GCI0011 · Performance Risk
+
+**Status:** Not yet implemented (spec only). Overlapping concerns are partially covered by **GCI0044**.
 
 **Confidence:** Medium
 **What it detects:** Four checks, all targeting added code within loop constructs. It flags materializing a collection to a list or array inside a loop body, which causes repeated full-enumeration allocations. It flags using a count-based existence check where a short-circuit check would suffice, causing the entire collection to be enumerated even when only the first matching element is needed. It flags allocating a new list or dictionary inside a loop, which generates garbage collection pressure on every iteration. It flags building strings with concatenation inside a loop, which is quadratic in complexity due to the immutability of strings.
@@ -300,6 +338,8 @@ These rules protect the long-term health of the codebase and the team's ability 
 
 ### GCI0009 · Consistency with Patterns
 
+**Status:** Not yet implemented (spec only). Overlapping concerns are partially covered by **GCI0046**.
+
 **Confidence:** Low
 **What it detects:** Two checks. First, if the diff context shows the existing codebase uses the asynchronous programming model, it looks for new methods whose names or return types suggest they should be asynchronous but are not declared as such. Second, it incorporates static analysis results that flag inconsistent string comparison styles and naming convention violations.
 **Why it matters:** Inconsistent use of asynchronous patterns makes code difficult to reason about and can introduce subtle deadlocks when mixing synchronous and asynchronous code paths. Inconsistent naming conventions reduce readability across a shared codebase.
@@ -308,6 +348,8 @@ These rules protect the long-term health of the codebase and the team's ability 
 ---
 
 ### GCI0013 · Observability/Debuggability
+
+**Status:** Not yet implemented (spec only)
 
 **Confidence:** Low
 **What it detects:** It checks each file where twenty or more lines have been added. If no logging calls are detected anywhere in those added lines, it flags the file as potentially unobservable.
@@ -318,6 +360,8 @@ These rules protect the long-term health of the codebase and the team's ability 
 
 ### GCI0018 · Production Readiness
 
+**Status:** Not yet implemented (spec only)
+
 **Confidence:** Medium
 **What it detects:** Three checks. First, it counts added lines containing work-in-progress markers such as TODO, FIXME, HACK, or XXX. Second, it looks for statements that throw a placeholder exception indicating a method body has not been implemented. Third, it checks non-test, non-CLI files for diagnostic output calls: such as writing directly to the console: and for debug assertion calls that are silently stripped in release builds.
 **Why it matters:** Work-in-progress markers indicate incomplete work being shipped. Placeholder exceptions crash callers at runtime. Console output bypasses the application's logging infrastructure and is lost in production. Debug assertions that are stripped in release builds provide no runtime protection.
@@ -326,6 +370,8 @@ These rules protect the long-term health of the codebase and the team's ability 
 ---
 
 ### GCI0023 · Structured Logging
+
+**Status:** Not yet implemented (spec only). PII-in-logs is covered by **GCI0029**.
 
 **Confidence:** Medium / Low
 **What it detects:** Two checks. First, it looks for log calls where the message is constructed using string interpolation: embedding values directly into the message string: rather than using named message template placeholders. Second, for files in critical business domains such as authentication, payment, billing, and order processing, it checks whether logging calls include a correlation or trace identifier.
@@ -336,6 +382,8 @@ These rules protect the long-term health of the codebase and the team's ability 
 
 ### GCI0025 · Feature Flag Readiness
 
+**Status:** Not yet implemented (spec only)
+
 **Confidence:** Medium
 **What it detects:** For files in critical business domains: including authentication, payment, billing, order processing, subscriptions, tokens, credentials, and passwords: it checks whether large changes (fifty or more added lines) include a reference to a feature flag or toggle mechanism. Recognized flag systems include common feature management libraries and interfaces.
 **Why it matters:** Large changes to high-value code paths that are shipped without a feature flag cannot be rolled back without a full redeployment. A feature flag allows the new behavior to be disabled instantly in production if it causes incidents, without touching the code.
@@ -345,6 +393,8 @@ These rules protect the long-term health of the codebase and the team's ability 
 
 ### GCI0026 · Documentation Adequacy
 
+**Status:** Not yet implemented (spec only)
+
 **Confidence:** Low
 **What it detects:** For each public method added to a source file, it checks whether an XML documentation comment block appears immediately above the method declaration, allowing for attribute decorators between the comment and the method signature.
 **Why it matters:** Public methods are part of a shared API surface. Without documentation comments, callers must read the implementation to understand parameters, return values, and expected behavior: especially costly in shared libraries and services.
@@ -353,6 +403,8 @@ These rules protect the long-term health of the codebase and the team's ability 
 ---
 
 ### GCI0027 · Test Quality
+
+**Status:** Not yet implemented (spec only). Overlapping concerns are partially covered by **GCI0041**.
 
 **Confidence:** High / Medium
 **What it detects:** For each test method added in test files, it checks whether the method body contains any assertion: a statement that verifies an expected outcome. If the method has no assertion at all, it is flagged at High confidence. If the method's only assertions are null-check assertions: checking that a value exists without verifying what the value is: it is flagged at Medium confidence.
@@ -368,6 +420,8 @@ These rules require that behavioral changes in production code are accompanied b
 ---
 
 ### GCI0031 · Boundary Drift
+
+**Status:** Not yet implemented (spec only)
 
 **Confidence:** Medium
 **What it detects:** It collects every numeric literal used in a comparison operation: less than, greater than, or their inclusive equivalents: in non-test files. For each such literal, it checks whether a test file in the same diff contains that same value in a test data row or assertion. If the boundary value appears in production logic but has no corresponding test coverage in the diff, it is flagged.
@@ -387,6 +441,8 @@ These rules require that behavioral changes in production code are accompanied b
 
 ### GCI0034 · Null-Coalescing Expansion
 
+**Status:** Not yet implemented (spec only)
+
 **Confidence:** Low
 **What it detects:** It counts the number of newly added null-conditional or null-coalescing operators: patterns used to provide default behavior when a value is absent: in non-test files. If any such operators exist, it checks whether any test file in the same diff passes a null value to the code being tested. If null guards are added without null-input test coverage, it flags the gap.
 **Why it matters:** A null guard that is never tested with null input may be masking a null reference exception source rather than intentionally handling a valid null case. The fallback behavior needs test coverage to confirm it is correct.
@@ -395,6 +451,8 @@ These rules require that behavioral changes in production code are accompanied b
 ---
 
 ### GCI0037 · Mapping Profile Integrity
+
+**Status:** Not yet implemented (spec only)
 
 **Confidence:** Medium
 **What it detects:** Four independent checks, one for each of the major object mapping libraries in use in the .NET ecosystem: AutoMapper, Mapster, AgileMapper, and TinyMapper. For each library, it detects whether mapping configuration was added or changed in the diff, and if so, whether the diff also contains the corresponding compile-time validation call specific to that library. For TinyMapper, which has no built-in compile-time validation, it always flags when a binding change is detected.
@@ -453,6 +511,8 @@ These rules examine how the application integrates with external systems, manage
 
 ### GCI0040 · Authorization Coverage
 
+**Status:** Not yet implemented (spec only). Partial overlap with **GCI0012** (`[AllowAnonymous]`).
+
 **Confidence:** High / Medium
 **What it detects:** Three checks. First, it looks for controller files where a new public action method is added without any authorization attribute on the method or in the surrounding added code. Second, it looks for authorization attributes that specify role names as inline string literals rather than as references to a constant. Third, it looks for JWT token validation settings that weaken security: such as disabling issuer validation, audience validation, token lifetime checking, or signature key validation.
 **Why it matters:** Controller actions without explicit authorization attributes may be accessible to unauthenticated users depending on the application's global configuration. Inline role name strings scattered across the codebase are error-prone and make access control auditing difficult. Weakening JWT validation settings exposes the application to token forgery, replay attacks, and man-in-the-middle attacks.
@@ -469,12 +529,13 @@ These rules examine how the application integrates with external systems, manage
 
 ---
 
-### GCI0042 · Package Dependency Changes
+### GCI0042 · TODO and Stub Detection
 
-**Confidence:** High / Medium / Low
-**What it detects:** Applies only to project files with a `.csproj` extension. Three checks. First, it flags every newly added package reference as a low-confidence advisory, since any new dependency introduces supply chain risk. Second, it checks the name of each newly added package against a list of suspicious name patterns associated with typosquatting attacks: deliberate misspellings or variations of legitimate package names. Third, it compares the version of each package before and after the change; if a package's version number was reduced, it flags the downgrade.
-**Why it matters:** New package dependencies introduce supply chain risk, licensing obligations, and the potential for transitive dependency conflicts. Typosquatted packages are a well-documented attack vector that can execute malicious code during the build process or at runtime. Downgrading a package version may reintroduce security vulnerabilities that were fixed in the higher version.
-**Suggested action:** Verify every new package against its publisher on the public package repository. Review the package license. Scan for known vulnerabilities before accepting a new dependency. Confirm that any version downgrade is intentional and that the lower version is not affected by vulnerabilities fixed in the higher version.
+**Default severity:** Info
+**Confidence:** Medium
+**What it detects:** Added lines in non-test production files containing TODO, FIXME, or HACK markers (comment lines require the marker as the first token after `//`), or `throw new NotImplementedException`.
+**Why it matters:** TODOs that ship to main rarely get done. `NotImplementedException` in production code is a deferred crash.
+**Suggested action:** Resolve markers and replace stubs with real implementations before merging.
 
 ---
 
@@ -487,12 +548,13 @@ These rules examine how the application integrates with external systems, manage
 
 ---
 
-### GCI0057 · Blocking Async Pattern Violation
+### GCI0057 · Synchronous File I/O
 
-**Confidence:** High / Medium
-**What it detects:** Two patterns. **Pattern A (High confidence):** Detects synchronous blocking calls on async operations: `.Result`, `.Wait()`, `.GetAwaiter().GetResult()` on Tasks or Promises. These patterns block the current thread and can cause deadlocks in frameworks that depend on the blocked thread to continue execution (ASP.NET, Blazor, WPF). **Pattern B (High in async methods, Medium otherwise):** Detects synchronous file I/O operations: `File.ReadAllText`, `File.WriteAllText`, `File.ReadAllLines`, `File.WriteAllLines`, etc. Exempt files: Program.cs, Startup.cs, *Extensions.cs (infrastructure files). Also exempt: test files.
-**Why it matters:** Blocking on async operations is a leading cause of deadlocks in modern C# applications. Synchronous file I/O blocks the thread that initiated it, preventing other work from progressing during the I/O delay. In a server application handling many concurrent requests, blocking threads exhaust the thread pool, causing application-wide slowdown or hang.
-**Suggested action:** Use `await` instead of `.Result` or `.Wait()`. Replace synchronous file I/O with `await File.ReadAllTextAsync(...)` or `await File.WriteAllTextAsync(...)`. If blocking is truly unavoidable, add a code comment explaining why and consider using `.GetAwaiter().GetResult()` explicitly to signal intent.
+**Default severity:** Warn
+**Confidence:** High (inside async methods) / Medium
+**What it detects:** Synchronous `File.ReadAllText`, `File.WriteAllText`, `File.ReadAllLines`, `File.WriteAllLines`, `File.Copy`, `File.ReadAllBytes`, and `File.WriteAllBytes` in added production lines. Exempt: `Program.cs`, `Startup.cs`, `AssemblyInfo.cs`, test files. Blocking async patterns (`.Result`, `.Wait()`, `.GetAwaiter().GetResult()`) are handled by **GCI0016**, not this rule.
+**Why it matters:** Sync file I/O blocks the calling thread during disk latency. In server apps under load, that reduces throughput compared to `File.*Async` variants.
+**Suggested action:** Prefer `await File.ReadAllTextAsync(...)` and related async APIs; use `Stream.CopyToAsync` for large copies.
 
 ---
 
@@ -535,11 +597,12 @@ The configuration file has two top-level sections:
 
 | Status | Count |
 |--------|-------|
-| Active | 32 |
+| Active | 36 |
+| Disabled by default | 2 (GCI0054, GCI0055 — duplicate coverage) |
 | Reserved / Consolidated | 2 (GCI0030, GCI0033) |
 | Unassigned | 1 (GCI0028) |
-| **Total IDs used** | **35** |
+| **Total IDs used** | **41** |
 
 ---
 
-*Last updated: 2026-05-12*
+*Last updated: 2026-05-25*

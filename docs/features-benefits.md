@@ -10,11 +10,13 @@ GauntletCI analyzes the exact lines added or removed in a pull request and flags
 
 ## Features
 
-### 30 Built-in Detection Rules
+### 34 Active Detection Rules (36 implementations)
+
+GauntletCI ships **36** rule classes; **34** run by default. **GCI0054** and **GCI0055** are disabled (severity `None`) because **GCI0016** and **GCI0003** cover the same patterns with lower duplication.
 
 #### Behavior & Contract Safety
 - Removed logic (return, throw, if/else, boolean operators) without matching test changes
-- Public API removals, signature changes, and dropped `[Obsolete]` attributes
+- Public API `[Obsolete]` transitions; incompatible method signatures (**GCI0003**)
 - Breaking serialization changes: removed `[JsonProperty]`, `[Column]`, `[DataMember]` attributes and dropped public enum members
 
 #### Security

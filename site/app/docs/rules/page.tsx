@@ -7,7 +7,7 @@ import { RuleExplorer } from "./rule-explorer";
 export const metadata: Metadata = {
   title: "Rule Library | GauntletCI Docs",
   description:
-    "34 deterministic rules — and growing — for detecting behavioral regressions, security risks, breaking changes, and code quality issues in C# and .NET pull request diffs.",
+    "36 documented detection rules (34 active by default) for behavioral regressions, security risks, breaking changes, and code quality issues in C# and .NET pull request diffs.",
   alternates: { canonical: "/docs/rules" },
 };
 
@@ -33,7 +33,7 @@ const jsonLd = {
 const faqSchema = buildFaqSchema([
   {
     q: "How many detection rules does GauntletCI have?",
-    a: `GauntletCI includes ${rules.length} deterministic detection rules covering behavioral regressions, breaking API changes, security risks, test coverage gaps, and architecture violations in .NET diffs.`,
+    a: "GauntletCI includes 36 documented detection rules; 34 run by default (GCI0054 and GCI0055 are disabled unless re-enabled). Coverage includes behavioral regressions, breaking API changes, security risks, test gaps, and architecture violations in .NET diffs.",
   },
   {
     q: "What categories of rules does GauntletCI have?",

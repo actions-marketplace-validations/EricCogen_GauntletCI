@@ -133,7 +133,7 @@ export const rules: Rule[] = [
     severity: "Block",
     categorySlug: "behavior",
     description:
-      "Detects removed logic lines and changed method signatures that alter runtime behavior without corresponding test updates.",
+      "Detects removed logic (Warn), incompatible method signature changes (Block), backward-compatible extensions (Info), and cryptographic boundary changes (Block).",
     whyExists:
       "A line removed from production code is a behavior change. If no test changed in the same diff, either the removed line was untested (silent regression risk) or the test it broke was deleted to make CI green.",
     example: {
@@ -146,16 +146,16 @@ export const rules: Rule[] = [
   {
     id: "GCI0004",
     name: "Breaking Change Risk",
-    severity: "Block",
+    severity: "Warn",
     categorySlug: "behavior",
     description:
-      "Detects removed public APIs and changed public method signatures that may break callers.",
+      "Detects [Obsolete] attribute additions and removals on public APIs. Removing a deprecation guard is Block-severity; adding one is a Warn-level review signal.",
     whyExists:
       "Public APIs are contracts with every caller in every consuming repo. Removing or renaming one without a deprecation cycle breaks downstream builds and forces emergency releases.",
     example: {
       language: "csharp",
-      bad: "- public Task<Order> GetOrder(int id)\n+ public Task<Order> GetOrderAsync(Guid id)",
-      good: "  [Obsolete(\"Use GetOrderAsync(Guid). Will be removed in v3.\")]\n  public Task<Order> GetOrder(int id) => GetOrderAsync(new Guid(id.ToString()));\n+ public Task<Order> GetOrderAsync(Guid id) { ... }",
+      bad: "- [Obsolete(\"Use GetOrderV2\")]\n  public Task<Order> GetOrder(int id) => ...",
+      good: "  [Obsolete(\"Use GetOrderV2. Removed in v3.\")]\n  public Task<Order> GetOrder(int id) => GetOrderV2(id);\n+ public Task<Order> GetOrderV2(int id) => ...",
     },
     relatedIds: ["GCI0021", "GCI0047", "GCI0052"],
   },
@@ -322,7 +322,7 @@ export const rules: Rule[] = [
   {
     id: "GCI0032",
     name: "Uncaught Exception Path",
-    severity: "Block",
+    severity: "Warn",
     categorySlug: "concurrency",
     description:
       "Fires when throw new is added without a corresponding Assert.Throws or Should().Throw assertion in the test suite.",
@@ -514,7 +514,7 @@ export const rules: Rule[] = [
   {
     id: "GCI0048",
     name: "Insecure Random in Security Context",
-    severity: "Info",
+    severity: "Warn",
     categorySlug: "security",
     description:
       "Detects System.Random instantiation within 5 lines of security-sensitive identifiers such as token, apikey, salt, or password. System.Random is not cryptographically secure.",
@@ -546,7 +546,7 @@ export const rules: Rule[] = [
   {
     id: "GCI0050",
     name: "SQL Column Truncation Risk",
-    severity: "Info",
+    severity: "Warn",
     categorySlug: "data",
     description:
       "Detects short nvarchar(N) or varchar(N) column definitions that may silently truncate data when real-world values exceed the column width.",
@@ -624,28 +624,12 @@ export const rules: Rule[] = [
     relatedIds: ["GCI0049", "GCI0015"],
   },
   {
-    id: "GCI0054",
-    name: "Async Void Abuse",
-    severity: "Warn",
-    categorySlug: "concurrency",
-    description:
-      "Detects public async methods that return void instead of Task, which prevents callers from awaiting and catching exceptions.",
-    whyExists:
-      "async void is a fire-and-forget antipattern. Any exception thrown crashes the synchronization context rather than propagating to the caller. Use async void only in event handlers where Task return is impossible.",
-    example: {
-      language: "csharp",
-      bad: "+ public async void SaveUserAsync(User user) { await _repo.SaveAsync(user); }",
-      good: "+ public async Task SaveUserAsync(User user) { await _repo.SaveAsync(user); }\n+ // Only use async void for OnClick, OnChange, event handlers, etc.",
-    },
-    relatedIds: ["GCI0016", "GCI0007"],
-  },
-  {
     id: "GCI0055",
     name: "Method Signature Change Risk",
-    severity: "Block",
+    severity: "Info",
     categorySlug: "behavior",
     description:
-      "Detects breaking method signature changes: removed parameters, new required parameters without defaults, or return type changes in public methods.",
+      "Disabled by default (severity None). Regex-based signature detection superseded by GCI0003. Re-enable in .gauntletci.json if needed.",
     whyExists:
       "Public method signatures are contracts. Removing a parameter, adding a required one, or changing the return type breaks every caller. These changes demand deprecation cycles, not silent breaking changes.",
     example: {
@@ -653,7 +637,55 @@ export const rules: Rule[] = [
       bad: "- public Task<User> GetUser(int id) { }\n+ public Task<User> GetUser(Guid id) { }\n+ // OR\n- public void ProcessOrder(Order order) { }\n+ public void ProcessOrder(Order order, ProcessOptions options) { }  // no default",
       good: "  [Obsolete(\"Use GetUserAsync(Guid)\")]\n  public Task<User> GetUser(int id) => GetUserAsync(new Guid(id.ToString()));\n+ public Task<User> GetUserAsync(Guid id) { }\n+ // OR\n+ public void ProcessOrder(Order order, ProcessOptions options = null) { }  // default provided",
     },
-    relatedIds: ["GCI0004", "GCI0046"],
+    relatedIds: ["GCI0003", "GCI0004"],
+  },
+  {
+    id: "GCI0054",
+    name: "Async Void Abuse",
+    severity: "Info",
+    categorySlug: "concurrency",
+    description:
+      "Disabled by default (severity None). Public async void detection superseded by GCI0016. Re-enable for the stricter public-only filter.",
+    whyExists:
+      "async void prevents awaiting and crashes on unhandled exceptions outside event handlers.",
+    example: {
+      language: "csharp",
+      bad: "+ public async void SaveUserAsync(User user) { await _repo.SaveAsync(user); }",
+      good: "+ public async Task SaveUserAsync(User user) { await _repo.SaveAsync(user); }",
+    },
+    relatedIds: ["GCI0016"],
+  },
+  {
+    id: "GCI0056",
+    name: "Missing Test Framework",
+    severity: "Info",
+    categorySlug: "quality",
+    description:
+      "Detects production code changes when the repository has no evidence of a test framework in project files.",
+    whyExists:
+      "Changes without any test infrastructure are higher risk; this is a repo-level signal, not a line-level defect.",
+    example: {
+      language: "diff",
+      bad: "  // New Service.cs added, no *.Tests.csproj or xunit reference anywhere in repo",
+      good: "  // tests/MyApp.Tests/MyApp.Tests.csproj references xunit and mirrors production changes",
+    },
+    relatedIds: ["GCI0041", "GCI0032"],
+  },
+  {
+    id: "GCI0057",
+    name: "Synchronous File I/O",
+    severity: "Warn",
+    categorySlug: "concurrency",
+    description:
+      "Detects synchronous File.ReadAllText/WriteAllText and similar calls. Blocking async patterns are covered by GCI0016.",
+    whyExists:
+      "Sync file I/O blocks thread-pool threads under load. Async variants yield during I/O.",
+    example: {
+      language: "csharp",
+      bad: "+ var json = File.ReadAllText(path);",
+      good: "+ var json = await File.ReadAllTextAsync(path, ct);",
+    },
+    relatedIds: ["GCI0016", "GCI0024"],
   },
 ];
 
