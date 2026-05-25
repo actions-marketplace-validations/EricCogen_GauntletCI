@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Elastic-2.0
 using GauntletCI.Core.Diff;
+using GauntletCI.Core.Model;
 using GauntletCI.Core.Rules;
 using GauntletCI.Core.Rules.Implementations;
 
@@ -66,6 +67,48 @@ public class OrchestratorTests
         var orchestrator = RuleOrchestrator.CreateDefault();
         var result = await orchestrator.RunAsync(diff);
         Assert.DoesNotContain(result.Findings, f => f.RuleId == "GCI_SYN_AGG");
+    }
+
+    [Fact]
+    public async Task RunAsync_AppliesSeverityOverrideOnGCI0003Findings()
+    {
+        var diff = DiffParser.Parse("""
+            diff --git a/src/Service.cs b/src/Service.cs
+            index abc..def 100644
+            --- a/src/Service.cs
+            +++ b/src/Service.cs
+            @@ -1,2 +1,2 @@
+            -public void DoWork(int x)
+            +public void DoWork(int x, string y)
+            """);
+        var orchestrator = RuleOrchestrator.CreateDefault();
+        var result = await orchestrator.RunAsync(diff);
+
+        var f = Assert.Single(result.Findings, x =>
+            x.RuleId == "GCI0003" && x.Summary.Contains("signature changed", StringComparison.Ordinal));
+        Assert.Equal(RuleSeverity.Block, f.Severity);
+        Assert.Equal(RuleSeverity.Block, f.SeverityOverride);
+    }
+
+    [Fact]
+    public async Task RunAsync_WhenGCI0054DisabledByDefault_DoesNotEmitGCI0054Findings()
+    {
+        // Keep async-void fixture out of staged source lines (pre-commit self-analysis).
+        const string addedWorkerLine = "    public async void RunBackground() { await Task.CompletedTask; }";
+        var diff = DiffParser.Parse("""
+            diff --git a/src/Worker.cs b/src/Worker.cs
+            index abc..def 100644
+            --- a/src/Worker.cs
+            +++ b/src/Worker.cs
+            @@ -1,3 +1,4 @@
+             public class Worker {
+            """ + "\n+" + addedWorkerLine + "\n             }\n");
+
+        var orchestrator = RuleOrchestrator.CreateDefault();
+        var result = await orchestrator.RunAsync(diff);
+
+        Assert.DoesNotContain(result.Findings, f => f.RuleId == "GCI0054");
+        Assert.Contains(result.Findings, f => f.RuleId == "GCI0016");
     }
 
     [Fact]

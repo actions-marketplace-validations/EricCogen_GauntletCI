@@ -48,7 +48,8 @@ public class GCI0004Tests
         var diff = DiffParser.Parse(raw);
         var findings = await Rule.EvaluateAsync(diff, null);
 
-        Assert.Contains(findings, f => f.Summary.Contains("[Obsolete] attribute removed"));
+        var f = Assert.Single(findings, x => x.Summary.Contains("[Obsolete] attribute removed", StringComparison.Ordinal));
+        Assert.Equal(RuleSeverity.Block, f.SeverityOverride);
     }
 
     [Fact]
