@@ -1,0 +1,48 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:/Users/ericc/AppData/Local/Programs/cursor/resources/app/resources/helpers/node.exe\" \"C:/Users/ericc/AppData/Roaming/npm/node_modules/context-mode/hooks/vscode-copilot/pretooluse.mjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:/Users/ericc/AppData/Local/Programs/cursor/resources/app/resources/helpers/node.exe\" \"C:/Users/ericc/AppData/Roaming/npm/node_modules/context-mode/hooks/vscode-copilot/posttooluse.mjs\""
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:/Users/ericc/AppData/Local/Programs/cursor/resources/app/resources/helpers/node.exe\" \"C:/Users/ericc/AppData/Roaming/npm/node_modules/context-mode/hooks/vscode-copilot/precompact.mjs\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:/Users/ericc/AppData/Local/Programs/cursor/resources/app/resources/helpers/node.exe\" \"C:/Users/ericc/AppData/Roaming/npm/node_modules/context-mode/hooks/vscode-copilot/sessionstart.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}
