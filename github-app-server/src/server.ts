@@ -3,6 +3,7 @@ import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
+import { buildReviewComment, type RawFinding } from "./prComment.js";
 
 interface Env {
   appId: string;
@@ -52,27 +53,9 @@ interface IssueCommentPayload {
   };
 }
 
-interface Finding {
-  RuleId?: string;
-  ruleId?: string;
-  Rule?: string;
-  Title?: string;
-  title?: string;
-  Message?: string;
-  message?: string;
-  Severity?: number | string;
-  severity?: number | string;
-  FilePath?: string;
-  filePath?: string;
-  Path?: string;
-  path?: string;
-  Line?: number;
-  line?: number;
-}
-
 interface GauntletResult {
-  Findings?: Finding[];
-  findings?: Finding[];
+  Findings?: RawFinding[];
+  findings?: RawFinding[];
 }
 
 const env = loadEnv();
@@ -205,11 +188,28 @@ async function reviewPullRequest(input: {
     await writeFile(diffPath, diff, "utf8");
     await cloneRepository(input.repository, input.headSha, repoDir, input.installationToken);
 
-    const analysis = await runGauntletCI(diffPath, repoDir);
+    const analysis = await runGauntletCI(diffPath, repoDir, {
+      token: input.installationToken,
+      repository: input.repository.full_name,
+      prNumber: input.pullNumber,
+      headSha: input.headSha,
+    });
     const parsed = parseGauntletResult(analysis.stdout);
     const findings = getFindings(parsed);
     const conclusion = findings.length > 0 ? "failure" : "success";
-    const summary = buildSummary(input, findings, analysis.exitCode);
+    const summary = buildReviewComment(
+      {
+        repositoryFullName: input.repository.full_name,
+        pullNumber: input.pullNumber,
+        headSha: input.headSha,
+        trigger: input.trigger,
+      },
+      findings,
+      analysis.exitCode,
+      env.sensitivity,
+      env.severity,
+      true
+    );
 
     if (checkRunId) {
       await completeCheckRun(input.repository, checkRunId, conclusion, summary, input.installationToken);
@@ -351,7 +351,11 @@ async function cloneRepository(repository: GitHubRepo, headSha: string, repoDir:
   await runProcess("git", [...auth, "checkout", headSha], { cwd: repoDir });
 }
 
-async function runGauntletCI(diffPath: string, repoDir: string): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+async function runGauntletCI(
+  diffPath: string,
+  repoDir: string,
+  reviewEnv: { token: string; repository: string; prNumber: number; headSha: string }
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return runProcess(env.gauntletciCommand, [
     "analyze",
     "--diff",
@@ -361,21 +365,32 @@ async function runGauntletCI(diffPath: string, repoDir: string): Promise<{ exitC
     "--output",
     "json",
     "--no-banner",
+    "--github-pr-comments",
     "--severity",
     env.severity,
     "--sensitivity",
     env.sensitivity,
-  ], { allowNonZeroExit: true });
+  ], {
+    allowNonZeroExit: true,
+    env: {
+      ...process.env,
+      GITHUB_TOKEN: reviewEnv.token,
+      GITHUB_REPOSITORY: reviewEnv.repository,
+      GAUNTLETCI_PR_NUMBER: String(reviewEnv.prNumber),
+      GAUNTLETCI_COMMIT_SHA: reviewEnv.headSha,
+    },
+  });
 }
 
 async function runProcess(
   command: string,
   args: string[],
-  options: { cwd?: string; allowNonZeroExit?: boolean } = {}
+  options: { cwd?: string; allowNonZeroExit?: boolean; env?: NodeJS.ProcessEnv } = {}
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
+      env: options.env,
       shell: false,
       windowsHide: true,
     });
@@ -411,48 +426,8 @@ function parseGauntletResult(stdout: string): GauntletResult {
   }
 }
 
-function getFindings(result: GauntletResult): Finding[] {
+function getFindings(result: GauntletResult): RawFinding[] {
   return result.Findings ?? result.findings ?? [];
-}
-
-function buildSummary(
-  input: { repository: GitHubRepo; pullNumber: number; headSha: string; trigger: string },
-  findings: Finding[],
-  exitCode: number
-): string {
-  const topFindings = findings.slice(0, 20);
-  const findingRows = topFindings.map((finding) => {
-    const rule = finding.RuleId ?? finding.ruleId ?? finding.Rule ?? "GCI";
-    const title = finding.Title ?? finding.title ?? finding.Message ?? finding.message ?? "Finding";
-    const path = finding.FilePath ?? finding.filePath ?? finding.Path ?? finding.path ?? "";
-    const line = finding.Line ?? finding.line;
-    const location = path ? `${path}${line ? `:${line}` : ""}` : "No location";
-    return `| ${escapeTable(rule)} | ${escapeTable(String(finding.Severity ?? finding.severity ?? ""))} | ${escapeTable(location)} | ${escapeTable(title)} |`;
-  }).join("\n");
-
-  return [
-    "## GauntletCI Review",
-    "",
-    `GauntletCI completed for \`${input.repository.full_name}#${input.pullNumber}\`.`,
-    "",
-    `- Trigger: \`${input.trigger}\``,
-    `- Commit: \`${input.headSha}\``,
-    `- Findings: \`${findings.length}\``,
-    `- Tool exit code: \`${exitCode}\``,
-    `- Sensitivity: \`${env.sensitivity}\``,
-    `- Severity threshold: \`${env.severity}\``,
-    "",
-    findings.length === 0
-      ? "No findings were reported."
-      : [
-          "Top findings:",
-          "",
-          "| Rule | Severity | Location | Summary |",
-          "| --- | --- | --- | --- |",
-          findingRows,
-          findings.length > topFindings.length ? `\nShowing ${topFindings.length} of ${findings.length} findings.` : "",
-        ].join("\n"),
-  ].join("\n");
 }
 
 function buildFailureSummary(input: { repository: GitHubRepo; pullNumber: number; trigger: string }, error: unknown): string {
@@ -567,10 +542,6 @@ function base64UrlJson(value: unknown): string {
 
 function base64Url(value: Buffer): string {
   return value.toString("base64url");
-}
-
-function escapeTable(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
 }
 
 function truncate(value: string, maxLength: number): string {

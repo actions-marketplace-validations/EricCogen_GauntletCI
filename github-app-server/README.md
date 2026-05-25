@@ -13,9 +13,10 @@ It receives GitHub App webhooks, verifies GitHub signatures, authenticates as th
 - `pull_request` events can run on `opened`, `synchronize`, and `reopened` when `GAUNTLETCI_AUTO_REVIEW_PULL_REQUESTS=true`.
 - Results are posted as:
   - a check run named `GauntletCI`
-  - a PR comment summary
+  - a PR comment with collapsible finding details (evidence, why it matters, suggested action)
+  - inline PR review comments on diff lines via `--github-pr-comments` (same format as the GitHub Action)
 
-Inline review comments are intentionally not included in this MVP. They require mapping each finding to a valid GitHub diff position, not just a file line.
+Inline comments use the same `GitHubPrReviewWriter` path as the CLI. Findings outside the diff appear only in the summary comment.
 
 ## Required host tools
 
@@ -84,10 +85,10 @@ On a pull request in a repository where the app is installed, comment:
 The app will fetch the PR diff, clone the repository at the PR head SHA into a temporary working directory, run:
 
 ```bash
-gauntletci analyze --diff pr.diff --repo repo --output json --no-banner --severity info --sensitivity permissive
+gauntletci analyze --diff pr.diff --repo repo --output json --no-banner --github-pr-comments --severity info --sensitivity permissive
 ```
 
-Then it will post a check run and a summary comment back to the PR.
+Then it will post a check run, inline review comments where lines are in the diff, and a detailed summary comment back to the PR.
 
 ## Deploy on Railway
 
