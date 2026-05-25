@@ -14,7 +14,6 @@ internal static class DefaultSeverities
         new(StringComparer.OrdinalIgnoreCase)
         {
             // Block: commit-blocking by default
-            ["GCI0001"] = RuleSeverity.Block,
             ["GCI0003"] = RuleSeverity.Block,
             ["GCI0004"] = RuleSeverity.Block,
             ["GCI0007"] = RuleSeverity.Block,
@@ -30,6 +29,7 @@ internal static class DefaultSeverities
             ["GCI0052"] = RuleSeverity.Block,
 
             // Warn: visible by default, non-blocking
+            ["GCI0001"] = RuleSeverity.Warn,
             ["GCI0053"] = RuleSeverity.Warn,
             ["GCI0006"] = RuleSeverity.Warn,
             ["GCI0022"] = RuleSeverity.Warn,

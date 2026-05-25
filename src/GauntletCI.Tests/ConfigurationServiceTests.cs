@@ -9,7 +9,7 @@ public class ConfigurationServiceTests
     // ── Default severity resolution ────────────────────────────────────────────
 
     [Theory]
-    [InlineData("GCI0001", RuleSeverity.Block)]
+    [InlineData("GCI0001", RuleSeverity.Warn)]
     [InlineData("GCI0003", RuleSeverity.Block)]
     [InlineData("GCI0012", RuleSeverity.Block)]
     [InlineData("GCI0039", RuleSeverity.Block)]
@@ -89,7 +89,7 @@ public class ConfigurationServiceTests
         {
             // No .editorconfig created
             var svc = new ConfigurationService(new GauntletConfig(), dir);
-            Assert.Equal(RuleSeverity.Block, svc.GetEffectiveSeverity("GCI0001")); // built-in default
+            Assert.Equal(RuleSeverity.Warn, svc.GetEffectiveSeverity("GCI0001")); // built-in default
         }
         finally { Directory.Delete(dir, recursive: true); }
     }
