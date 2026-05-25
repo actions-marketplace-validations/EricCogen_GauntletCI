@@ -51,6 +51,7 @@ graphify-out/
 !docs/features-benefits.md
 !Docker/docker.md
 !worker/README.md
+!github-app-server/README.md
 !SUPPORT.md
 !nuget-readme.md
 !docs/noise-and-false-positives.md
@@ -155,6 +156,10 @@ BenchmarkDotNet.Artifacts/
 node_modules/
 worker/.wrangler/
 worker/dist/
+github-app-server/node_modules/
+github-app-server/dist/
+github-app-server/.env
+**/.gauntletci-github-app-work/
 
 # Next.js site build artifacts
 site/out/
