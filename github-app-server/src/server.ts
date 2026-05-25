@@ -93,7 +93,7 @@ server.listen(env.port, () => {
 async function route(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
 
-  if (request.method === "GET" && url.pathname === "/healthz") {
+  if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/healthz")) {
     sendText(response, 200, "OK");
     return;
   }
