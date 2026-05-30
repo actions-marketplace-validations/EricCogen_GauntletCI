@@ -247,12 +247,16 @@ public class RuleOrchestrator
         allFindings.Clear();
         allFindings.AddRange(provenance.Findings);
 
+        var semantic = SemanticFindingProcessor.Apply(allFindings, filteredDiff, _config.Semantics);
+        allFindings.Clear();
+        allFindings.AddRange(semantic.Findings);
+
         var domainProfile = RepoDomainClassifier.Classify(_configService.RepoPath, filteredDiff, _config.Domain);
         var domain = DomainFindingProcessor.Apply(allFindings, domainProfile, _config.Domain);
         allFindings.Clear();
         allFindings.AddRange(domain.Findings);
 
-        var delivery = ApplyDelivery(allFindings, provenance.DroppedCount, domain.DroppedCount);
+        var delivery = ApplyDelivery(allFindings, provenance.DroppedCount, domain.DroppedCount, semantic.BoostsApplied);
         var finalFindings = delivery.Findings.ToList();
 
         return new EvaluationResult
@@ -307,12 +311,13 @@ public class RuleOrchestrator
     private FindingDeliveryProcessor.Result ApplyDelivery(
         List<Finding> allFindings,
         int droppedByProvenance,
-        int droppedByDomain)
+        int droppedByDomain,
+        int semanticsBoosts)
     {
         var deliveryConfig = _config.Output.Delivery;
         var result = FindingDeliveryProcessor.Apply(allFindings, deliveryConfig);
 
-        if (droppedByProvenance <= 0 && droppedByDomain <= 0)
+        if (droppedByProvenance <= 0 && droppedByDomain <= 0 && semanticsBoosts <= 0)
             return result;
 
         var summary = result.Summary;
@@ -329,6 +334,7 @@ public class RuleOrchestrator
                 CoordinationBoostsApplied = summary.CoordinationBoostsApplied,
                 DroppedByProvenanceFilter = droppedByProvenance,
                 DroppedByDomainFilter = droppedByDomain,
+                SemanticsBoostsApplied = semanticsBoosts,
             },
         };
     }
