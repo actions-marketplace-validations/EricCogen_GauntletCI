@@ -27,4 +27,7 @@ public sealed class FindingDeliverySummary
 
     /// <summary>Findings removed because the repo was classified as a class library.</summary>
     public int DroppedByDomainFilter { get; init; }
+
+    /// <summary>Findings whose confidence was boosted by semantic counterfactual alignment.</summary>
+    public int SemanticsBoostsApplied { get; init; }
 }

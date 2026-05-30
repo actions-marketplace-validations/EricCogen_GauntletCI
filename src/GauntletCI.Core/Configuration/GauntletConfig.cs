@@ -52,6 +52,9 @@ public class GauntletConfig
     /// <summary>Diff provenance filter for suppressing findings on relocated lines (PG-PROVENANCE).</summary>
     public ProvenanceConfig Provenance { get; set; } = new();
 
+    /// <summary>Semantic patch analysis and counterfactual enrichment (PG-SEMANTICS).</summary>
+    public SemanticsConfig Semantics { get; set; } = new();
+
     /// <summary>Ticket provider integration settings (Jira, Linear, GitHub Issues).</summary>
     public TicketProviderConfig TicketProvider { get; set; } = new();
 
