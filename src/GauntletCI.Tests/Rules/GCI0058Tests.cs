@@ -142,4 +142,74 @@ public sealed class GCI0058Tests
         Assert.Equal("GCI0058", finding.RuleId);
         Assert.Contains("IsSubscriberConnected", finding.Evidence, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task WhileLoopSiblingPolarity_ShouldFire()
+    {
+        var raw = """
+            diff --git a/src/Worker.cs b/src/Worker.cs
+            index abc..def 100644
+            --- a/src/Worker.cs
+            +++ b/src/Worker.cs
+            @@ -1,1 +1,24 @@
+            +    sealed class FastWorker
+            +    {
+            +        internal void Drain()
+            +        {
+            +            while (HasPendingWork())
+            +                Process();
+            +        }
+            +    }
+            +
+            +    sealed class SlowWorker
+            +    {
+            +        internal void Drain()
+            +        {
+            +            while (!HasPendingWork())
+            +                Process();
+            +        }
+            +    }
+            """;
+
+        var diff = DiffParser.Parse(raw);
+        var findings = await Rule.EvaluateAsync(diff, null);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal("GCI0058", finding.RuleId);
+        Assert.Contains("HasPendingWork", finding.Evidence, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TernarySiblingPolarity_ShouldFire()
+    {
+        var raw = """
+            diff --git a/src/Gate.cs b/src/Gate.cs
+            index abc..def 100644
+            --- a/src/Gate.cs
+            +++ b/src/Gate.cs
+            @@ -1,1 +1,16 @@
+            +    sealed class StrictGate
+            +    {
+            +        internal bool Allow(Request r)
+            +        {
+            +            return CanAccept(r) ? true : false;
+            +        }
+            +    }
+            +
+            +    sealed class LooseGate
+            +    {
+            +        internal bool Allow(Request r)
+            +        {
+            +            return !CanAccept(r) ? true : false;
+            +        }
+            +    }
+            """;
+
+        var diff = DiffParser.Parse(raw);
+        var findings = await Rule.EvaluateAsync(diff, null);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal("GCI0058", finding.RuleId);
+        Assert.Contains("CanAccept", finding.Evidence, StringComparison.Ordinal);
+    }
 }

@@ -1,0 +1,76 @@
+# Eval lab workflow: GauntletCI Redis PR #2995 benchmark
+#
+# Copy to EricCogen/ai-review-eval-stackexchange-redis as:
+#   .github/workflows/gauntletci-redis-benchmark.yml
+#
+# Requires: checkout GauntletCI at a pinned ref or use `dotnet tool install gauntletci`
+
+name: GauntletCI Redis Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "benchmarks/**"
+      - ".github/workflows/gauntletci-redis-benchmark.yml"
+
+jobs:
+  gauntletci-redis-2995:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Checkout GauntletCI
+        uses: actions/checkout@v6
+        with:
+          repository: EricCogen/GauntletCI
+          path: gauntletci
+          ref: main
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Fetch Redis PR #2995 diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/StackExchange/StackExchange.Redis/pulls/2995 --jq .diff_url \
+            | xargs curl -fsSL -o /tmp/redis-2995.diff
+
+      - name: Run benchmark
+        run: |
+          cd gauntletci
+          dotnet build GauntletCI.slnx -v quiet --nologo
+          CONFIG=/tmp/gci-redis-eval
+          mkdir -p "$CONFIG"
+          cat > "$CONFIG/.gauntletci.json" <<'EOF'
+          {
+            "domain": { "profile": "library" },
+            "output": { "delivery": { "enabled": true, "globalMaxFindings": 25 } },
+            "provenance": { "enabled": true },
+            "semantics": { "enabled": true }
+          }
+          EOF
+          dotnet run --project src/GauntletCI.Cli --no-build -- analyze \
+            --diff /tmp/redis-2995.diff \
+            --repo "$CONFIG" \
+            --output /tmp/redis-2995-out.json \
+            --sensitivity permissive \
+            --no-banner
+
+      - name: Assert GCI0058
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          doc = json.load(open("/tmp/redis-2995-out.json", encoding="utf-8-sig"))
+          findings = doc.get("Findings") or []
+          g58 = [f for f in findings if f.get("RuleId") == "GCI0058"]
+          if not g58:
+              sys.exit("Missing GCI0058 — ground truth regression")
+          if len(findings) > 25:
+              sys.exit(f"Delivery cap exceeded: {len(findings)}")
+          print(f"OK: {len(findings)} findings, {len(g58)} GCI0058")
+          PY

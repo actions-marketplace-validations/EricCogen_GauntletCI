@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-05-30T01:04:50.686035+00:00",
+  "generated_at": "2026-05-30T01:53:37.033923+00:00",
   "corpus_path": "%USERPROFILE%\\.gauntletci\\corpus.db",
   "corpus_loaded": true,
-  "rule_count": 36,
+  "rule_count": 37,
   "pattern_taxonomy": {
     "P1": "Added-line substring scan",
     "P2": "Removed-line substring scan",
@@ -81,7 +81,8 @@
         "GCI0052",
         "GCI0053",
         "GCI0055",
-        "GCI0056"
+        "GCI0056",
+        "GCI0058"
       ],
       "fix": "New cross-method layer: same override name, opposite boolean polarity, method name vs condition"
     },
@@ -123,7 +124,8 @@
         "GCI0049",
         "GCI0052",
         "GCI0055",
-        "GCI0006"
+        "GCI0006",
+        "GCI0058"
       ],
       "fix": "Similarity match added hunks to removed hunks before firing"
     },
@@ -2571,11 +2573,53 @@
         "labeled_recall": null,
         "snapshot_usefulness": null,
         "expected_triggers": 17,
-        "actual_triggers_all_runs": 10978
+        "actual_triggers_all_runs": 10979
       },
       "fixture_trigger_count": 0,
       "audit_status": "auto-tagged",
       "human_review_required": false
+    },
+    {
+      "rule_id": "GCI0058",
+      "name": "Paired Implementation Consistency",
+      "source_file": "src/GauntletCI.Core/Rules/Implementations/GCI0058_PairedImplementationConsistency.cs",
+      "primary_patterns": [
+        "P1",
+        "P5"
+      ],
+      "pattern_notes": {
+        "P1": "Added-line substring scan",
+        "P5": "Cross-entity compare (partial or required)"
+      },
+      "domain": "general",
+      "uses_roslyn": false,
+      "added_lines_only": false,
+      "requires_cross_method": true,
+      "requires_removed_added_pair": false,
+      "typical_fanout": "low",
+      "root_causes": [
+        "RC-1",
+        "RC-6",
+        "RC-7",
+        "RC-8"
+      ],
+      "known_fp_classes": [
+        "refactor-restructure"
+      ],
+      "known_fn_classes": [
+        "inverted-condition",
+        "logic-bug-no-token",
+        "sibling-implementation-drift"
+      ],
+      "head_to_head_risk": "low",
+      "priority_tier": 4,
+      "corpus": {
+        "expected_triggers": 1,
+        "actual_triggers_all_runs": 1
+      },
+      "fixture_trigger_count": 0,
+      "audit_status": "auto-tagged",
+      "human_review_required": true
     }
   ],
   "eval_notes": {
@@ -2590,6 +2634,8 @@
     "redis_2995_regression": {
       "adjudicated_defect": "MultiNodeSubscription.RemoveDisconnectedEndpoints inverted IsSubscriberConnected",
       "miss_pattern": "P5 sibling-implementation (gap PG-RELATION)",
+      "gold_fixture_id": "redis-2995-multinode-inverted",
+      "primary_rule": "GCI0058",
       "noise_example_rules": [
         "GCI0038",
         "GCI0006",

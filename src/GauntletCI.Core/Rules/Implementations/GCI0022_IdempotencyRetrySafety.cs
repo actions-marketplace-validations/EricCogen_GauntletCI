@@ -40,6 +40,10 @@ public class GCI0022_IdempotencyRetrySafety : RuleBase
         if (WellKnownPatterns.IsTestFile(file.NewPath))
             return;
 
+        // HTTP idempotency applies to web/API surfaces, not client libraries or domain models
+        if (!IsWebApiSurfaceFile(file.NewPath))
+            return;
+
         var allLines = file.Hunks.SelectMany(h => h.Lines).ToList();
 
         for (int i = 0; i < allLines.Count; i++)
@@ -110,6 +114,10 @@ public class GCI0022_IdempotencyRetrySafety : RuleBase
 
     private void CheckEventHandlerWithoutDedup(DiffFile file, List<Finding> findings)
     {
+        // Client/infrastructure libraries attach handlers once per connection lifecycle
+        if (IsInfrastructureClientFile(file.NewPath))
+            return;
+
         var allLines = file.Hunks.SelectMany(h => h.Lines).ToList();
 
         for (int i = 0; i < allLines.Count; i++)
@@ -171,5 +179,17 @@ public class GCI0022_IdempotencyRetrySafety : RuleBase
                path.EndsWith("Presenter.cs", StringComparison.OrdinalIgnoreCase) ||
                path.Contains(".xaml.cs", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static bool IsWebApiSurfaceFile(string path) =>
+        path.Contains("Controller", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("/Controllers/", StringComparison.Ordinal) ||
+        path.Contains("\\Controllers\\", StringComparison.Ordinal) ||
+        path.EndsWith("Program.cs", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsInfrastructureClientFile(string path) =>
+        path.Contains("Subscription", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("Subscriber", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("Connection", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("Multiplexer", StringComparison.OrdinalIgnoreCase);
 }
 

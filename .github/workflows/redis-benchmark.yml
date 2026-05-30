@@ -1,0 +1,52 @@
+name: Redis PR2995 Benchmark
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/GauntletCI.Core/**"
+      - "scripts/run-redis-benchmark.ps1"
+      - ".github/workflows/redis-benchmark.yml"
+      - "eval/redis-2995-scorecard.json"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/GauntletCI.Core/**"
+      - "scripts/run-redis-benchmark.ps1"
+      - ".github/workflows/redis-benchmark.yml"
+
+jobs:
+  redis-benchmark:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Run Redis #2995 benchmark
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/run-redis-benchmark.ps1
+
+      - name: Assert GCI0058 ground truth
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:GITHUB_WORKSPACE "eval/redis-2995-latest.json"
+          if (-not (Test-Path $path)) { throw "Missing $path" }
+          $doc = Get-Content $path -Raw | ConvertFrom-Json
+          $findings = @($doc.Findings)
+          $g58 = @($findings | Where-Object { $_.RuleId -eq "GCI0058" })
+          if ($g58.Count -lt 1) {
+            throw "Expected at least one GCI0058 finding for Redis PR #2995"
+          }
+          if ($findings.Count -gt 25) {
+            throw "Delivery cap exceeded: $($findings.Count) findings (max 25)"
+          }
+          Write-Host "OK: $($findings.Count) delivered findings, $($g58.Count) GCI0058"

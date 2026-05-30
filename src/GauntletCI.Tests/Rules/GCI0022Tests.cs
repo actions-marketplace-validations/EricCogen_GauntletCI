@@ -162,5 +162,44 @@ public class GCI0022Tests
         Assert.DoesNotContain(findings, f => f.Summary.Contains("Event handler registered without dedup"));
     }
 
+    [Fact]
+    public async Task EventHandlerInSubscriptionFile_ShouldNotFlag()
+    {
+        var raw = """
+            diff --git a/src/StackExchange.Redis/Subscription.cs b/src/StackExchange.Redis/Subscription.cs
+            index abc..def 100644
+            --- a/src/StackExchange.Redis/Subscription.cs
+            +++ b/src/StackExchange.Redis/Subscription.cs
+            @@ -1,1 +1,1 @@
+            +MessageReceived += OnMessage;
+            """;
+
+        var diff = DiffParser.Parse(raw);
+        var findings = await Rule.EvaluateAsync(diff, null);
+
+        Assert.DoesNotContain(findings, f => f.Summary.Contains("Event handler"));
+    }
+
+    [Fact]
+    public async Task HttpPostInClientLibrary_ShouldNotFlag()
+    {
+        var raw = """
+            diff --git a/src/StackExchange.Redis/RedisClient.cs b/src/StackExchange.Redis/RedisClient.cs
+            index abc..def 100644
+            --- a/src/StackExchange.Redis/RedisClient.cs
+            +++ b/src/StackExchange.Redis/RedisClient.cs
+            @@ -1,3 +1,6 @@
+             public class RedisClient {
+            +    [HttpPost]
+            +    public void Send() { }
+             }
+            """;
+
+        var diff = DiffParser.Parse(raw);
+        var findings = await Rule.EvaluateAsync(diff, null);
+
+        Assert.DoesNotContain(findings, f => f.Summary.Contains("[HttpPost]"));
+    }
+
 }
 

@@ -10,7 +10,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 export const metadata: Metadata = {
   title: "OSS Case Studies | GauntletCI Behavioral Risk Analysis",
   description:
-    "Five deeply researched .NET open-source pull requests showing swallowed exceptions, nullable API changes, serialization risk, timeout inheritance, and telemetry review signals.",
+    "Six deeply researched .NET open-source pull requests showing swallowed exceptions, paired-implementation drift, nullable API changes, serialization risk, timeout inheritance, and telemetry review signals.",
   alternates: { canonical: "/articles/case-studies" },
   openGraph: { images: [{ url: "/og/case-studies.png", width: 1200, height: 630 }] },
 };
@@ -20,11 +20,21 @@ const jsonLd = {
   "@type": "CollectionPage",
   name: "GauntletCI OSS Case Studies",
   description:
-    "Five deeply researched .NET open-source pull requests showing behavioral risk, API contract changes, and honest coverage gaps.",
+    "Six deeply researched .NET open-source pull requests showing behavioral risk, API contract changes, and honest coverage gaps.",
   url: "https://gauntletci.com/articles/case-studies",
 };
 
 const studies = [
+  {
+    href: "/articles/case-studies/stackexchange-redis-paired-implementation",
+    repo: "StackExchange/StackExchange.Redis",
+    pr: "PR #2995",
+    rules: ["GCI0058"],
+    severity: "BLOCK",
+    summary:
+      "Cluster subscription PR inverts IsSubscriberConnected between sibling implementations",
+    tags: ["Logic Bug", "Cluster"],
+  },
   {
     href: "/articles/case-studies/stackexchange-redis-swallowed-exception",
     repo: "StackExchange/StackExchange.Redis",
