@@ -133,6 +133,10 @@ packaging/*.nupkg
 # Publish artifacts (self-contained EXE - too large for GitHub)
 publish/
 
+# Local eval snapshots (committed baselines: eval/*-scorecard.json)
+eval/*-latest.json
+.gauntletci.*.json
+
 # Phase files and analysis scripts (keep locally in .misc/)
 phase*.py
 phase*.json
