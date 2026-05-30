@@ -262,6 +262,16 @@ export type CaseStudy = {
 
 export const caseStudies: CaseStudy[] = [
   {
+    slug: "stackexchange-redis-paired-implementation",
+    href: "/articles/case-studies/stackexchange-redis-paired-implementation",
+    repo: "StackExchange/StackExchange.Redis",
+    pr: "PR #2995",
+    title: "Paired Implementation Drift in StackExchange.Redis",
+    description:
+      "MultiNodeSubscription inverted IsSubscriberConnected relative to SingleNodeSubscription — the logic defect LLM reviewers caught on PR #2995.",
+    ruleIds: ["GCI0058"],
+  },
+  {
     slug: "stackexchange-redis-swallowed-exception",
     href: "/articles/case-studies/stackexchange-redis-swallowed-exception",
     repo: "StackExchange/StackExchange.Redis",

@@ -38,6 +38,9 @@ public class GCI0029_PiiLoggingLeak : RuleBase
                 // XML documentation comments are never runtime log calls
                 if (trimmed.StartsWith("///")) continue;
 
+                // Skip attribute lines (FastHash, Obsolete, etc.) — not runtime log calls
+                if (trimmed.StartsWith('[')) continue;
+
                 // Skip comment lines entirely (// or *)
                 if (trimmed.StartsWith("//") || trimmed.StartsWith("*")) continue;
 

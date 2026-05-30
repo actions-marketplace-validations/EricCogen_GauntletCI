@@ -663,6 +663,8 @@ def main() -> None:
             "redis_2995_regression": {
                 "adjudicated_defect": "MultiNodeSubscription.RemoveDisconnectedEndpoints inverted IsSubscriberConnected",
                 "miss_pattern": "P5 sibling-implementation (gap PG-RELATION)",
+                "gold_fixture_id": "redis-2995-multinode-inverted",
+                "primary_rule": "GCI0058",
                 "noise_example_rules": ["GCI0038", "GCI0006", "GCI0043"],
             },
             "audit_checklist_per_rule": [

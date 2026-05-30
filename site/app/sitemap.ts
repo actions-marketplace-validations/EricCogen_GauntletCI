@@ -60,6 +60,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/compare/gauntletci-vs-ai-code-review`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/articles/case-studies`,                                                     changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE_URL}/benchmark`,                                                         changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE_URL}/articles/case-studies/stackexchange-redis-paired-implementation`,         changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/articles/case-studies/stackexchange-redis-swallowed-exception`,             changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/articles/case-studies/newtonsoft-json-assignment-in-getter`,                changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/articles/case-studies/efcore-breaking-api-removal`,                        changeFrequency: "monthly", priority: 0.8 },

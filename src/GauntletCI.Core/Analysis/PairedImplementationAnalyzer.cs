@@ -16,8 +16,11 @@ internal static class PairedImplementationAnalyzer
         new(@"\b(?:public|private|protected|internal)\s+(?:static\s+)?(?:override\s+)?(?:async\s+)?[\w<>\[\]?]+\s+(\w+)\s*\(",
             RegexOptions.Compiled);
 
-    private static readonly Regex IfConditionRegex =
-        new(@"if\s*\((.+?)\)", RegexOptions.Compiled);
+    private static readonly Regex ConditionalRegex =
+        new(@"\b(?:if|while)\s*\((.+?)\)", RegexOptions.Compiled);
+
+    private static readonly Regex TernaryConditionRegex =
+        new(@"([^?:]+)\?", RegexOptions.Compiled);
 
     internal sealed record ConditionObservation(
         string ClassName,
@@ -54,19 +57,23 @@ internal static class PairedImplementationAnalyzer
             if (currentClass is null || currentMethod is null)
                 continue;
 
-            if (!IfConditionRegex.IsMatch(content))
+            var conditionSources = CollectConditionSources(content);
+            if (conditionSources.Count == 0)
                 continue;
 
-            foreach (var extracted in ExtractConditions(content))
+            foreach (var conditionText in conditionSources)
             {
-                observations.Add(new ConditionObservation(
-                    currentClass,
-                    currentMethod,
-                    line.LineNumber,
-                    extracted.Condition,
-                    extracted.Callee,
-                    extracted.IsNegated,
-                    line.Kind == DiffLineKind.Added));
+                foreach (var extracted in ExtractConditions(conditionText))
+                {
+                    observations.Add(new ConditionObservation(
+                        currentClass,
+                        currentMethod,
+                        line.LineNumber,
+                        extracted.Condition,
+                        extracted.Callee,
+                        extracted.IsNegated,
+                        line.Kind == DiffLineKind.Added));
+                }
             }
         }
 
@@ -109,13 +116,27 @@ internal static class PairedImplementationAnalyzer
         return mismatches;
     }
 
-    private static IEnumerable<(string Condition, string Callee, bool IsNegated)> ExtractConditions(string line)
+    private static List<string> CollectConditionSources(string line)
     {
-        var ifMatch = IfConditionRegex.Match(line);
-        if (!ifMatch.Success)
-            yield break;
+        var sources = new List<string>();
+        var conditionalMatch = ConditionalRegex.Match(line);
+        if (conditionalMatch.Success)
+            sources.Add(conditionalMatch.Groups[1].Value!.Trim());
 
-        var condition = ifMatch.Groups[1].Value!.Trim();
+        foreach (Match ternary in TernaryConditionRegex.Matches(line))
+        {
+            var candidate = ternary.Groups[1].Value!.Trim();
+            if (candidate.Length == 0 || candidate.Contains('{') || candidate.Contains('='))
+                continue;
+
+            sources.Add(candidate);
+        }
+
+        return sources;
+    }
+
+    private static IEnumerable<(string Condition, string Callee, bool IsNegated)> ExtractConditions(string condition)
+    {
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (Match pattern in Regex.Matches(condition, @"(\w+)\s*:\s*(true|false)\b", RegexOptions.IgnoreCase))
@@ -140,9 +161,19 @@ internal static class PairedImplementationAnalyzer
             yield return (condition, callee, negated);
         }
 
-        foreach (Match prop in Regex.Matches(condition, @"\.(?<member>Is[A-Z]\w+)\b"))
+        foreach (Match prop in Regex.Matches(condition, @"\.(?<member>(?:Is|Has|Can|Should)[A-Z]\w+)\b"))
         {
             var member = prop.Groups["member"].Value!;
+            if (!seen.Add(member))
+                continue;
+
+            var negated = Regex.IsMatch(condition, $@"(?<![:\w])!{member}\b|{member}\s*==\s*false", RegexOptions.CultureInvariant);
+            yield return (condition, member, negated);
+        }
+
+        foreach (Match bare in Regex.Matches(condition, @"\b(?<member>(?:Is|Has|Can|Should)[A-Z]\w+)\b"))
+        {
+            var member = bare.Groups["member"].Value!;
             if (!seen.Add(member))
                 continue;
 
@@ -153,6 +184,9 @@ internal static class PairedImplementationAnalyzer
 
     private static bool IsBooleanMember(string name) =>
         name.StartsWith("Is", StringComparison.Ordinal) ||
+        name.StartsWith("Has", StringComparison.Ordinal) ||
+        name.StartsWith("Can", StringComparison.Ordinal) ||
+        name.StartsWith("Should", StringComparison.Ordinal) ||
         name.EndsWith("Connected", StringComparison.Ordinal) ||
         name.EndsWith("Enabled", StringComparison.Ordinal);
 }
