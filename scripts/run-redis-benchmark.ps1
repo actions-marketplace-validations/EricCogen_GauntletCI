@@ -10,9 +10,30 @@ Set-Location $RepoRoot
 
 if (-not (Test-Path $DiffPath)) {
     Write-Host "Fetching diff from GitHub..."
-    gh api repos/StackExchange/StackExchange.Redis/pulls/2995 --jq .diff_url | ForEach-Object {
-        Invoke-WebRequest -Uri $_ -OutFile $DiffPath
+    $diffDir = Split-Path $DiffPath -Parent
+    if ($diffDir) {
+        New-Item -ItemType Directory -Force -Path $diffDir | Out-Null
     }
+
+    $token = if ($env:GH_TOKEN) { $env:GH_TOKEN } elseif ($env:GITHUB_TOKEN) { $env:GITHUB_TOKEN } else { $null }
+    if ($token) {
+        Invoke-WebRequest `
+            -Uri "https://api.github.com/repos/StackExchange/StackExchange.Redis/pulls/2995" `
+            -Headers @{
+                Authorization = "Bearer $token"
+                Accept        = "application/vnd.github.diff"
+            } `
+            -OutFile $DiffPath
+    }
+    else {
+        gh api repos/StackExchange/StackExchange.Redis/pulls/2995 `
+            --header "Accept: application/vnd.github.diff" `
+            -o $DiffPath
+    }
+}
+
+if (-not (Test-Path $DiffPath)) {
+    throw "Failed to fetch Redis PR #2995 diff to $DiffPath"
 }
 
 $configDir = Join-Path $env:TEMP "gci-redis-eval"
