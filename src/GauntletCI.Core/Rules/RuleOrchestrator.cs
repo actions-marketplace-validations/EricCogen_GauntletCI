@@ -5,6 +5,7 @@ using GauntletCI.Core.Configuration;
 using GauntletCI.Core.Diff;
 using GauntletCI.Core.FileAnalysis;
 using GauntletCI.Core.Model;
+using GauntletCI.Core.Rules.Delivery;
 using GauntletCI.Core.StaticAnalysis;
 
 namespace GauntletCI.Core.Rules;
@@ -241,13 +242,28 @@ public class RuleOrchestrator
         ApplyIgnoreList(allFindings, ignoreList);
         PostProcess(filteredDiff, allFindings);
 
+        var provenanceIndex = DiffProvenanceAnalyzer.Build(filteredDiff);
+        var provenance = ProvenanceFindingProcessor.Apply(allFindings, provenanceIndex, _config.Provenance);
+        allFindings.Clear();
+        allFindings.AddRange(provenance.Findings);
+
+        var domainProfile = RepoDomainClassifier.Classify(_configService.RepoPath, filteredDiff, _config.Domain);
+        var domain = DomainFindingProcessor.Apply(allFindings, domainProfile, _config.Domain);
+        allFindings.Clear();
+        allFindings.AddRange(domain.Findings);
+
+        var delivery = ApplyDelivery(allFindings, provenance.DroppedCount, domain.DroppedCount);
+        var finalFindings = delivery.Findings.ToList();
+
         return new EvaluationResult
         {
             CommitSha = diff.CommitSha,
-            Findings = allFindings,
+            Findings = finalFindings,
             RulesEvaluated = _rules.Count,
             RuleMetrics = metrics,
             FileStatistics = fileStatistics,
+            DeliverySummary = delivery.Summary,
+            DomainProfile = domainProfile,
         };
     }
 
@@ -287,6 +303,35 @@ public class RuleOrchestrator
             Console.Error.WriteLine($"[GauntletCI] PostProcess threw an exception: {ex.Message}");
         }
     }
+
+    private FindingDeliveryProcessor.Result ApplyDelivery(
+        List<Finding> allFindings,
+        int droppedByProvenance,
+        int droppedByDomain)
+    {
+        var deliveryConfig = _config.Output.Delivery;
+        var result = FindingDeliveryProcessor.Apply(allFindings, deliveryConfig);
+
+        if (droppedByProvenance <= 0 && droppedByDomain <= 0)
+            return result;
+
+        var summary = result.Summary;
+        return new FindingDeliveryProcessor.Result
+        {
+            Findings = result.Findings,
+            Summary = new FindingDeliverySummary
+            {
+                InputCount = summary.InputCount,
+                OutputCount = summary.OutputCount,
+                DroppedByFileLevelDemotion = summary.DroppedByFileLevelDemotion,
+                DroppedByPerRuleCap = summary.DroppedByPerRuleCap,
+                DroppedByGlobalCap = summary.DroppedByGlobalCap,
+                CoordinationBoostsApplied = summary.CoordinationBoostsApplied,
+                DroppedByProvenanceFilter = droppedByProvenance,
+                DroppedByDomainFilter = droppedByDomain,
+            },
+        };
+    }
 }
 
 /// <summary>Aggregated output of a single <see cref="RuleOrchestrator.RunAsync"/> call.</summary>
@@ -302,6 +347,10 @@ public class EvaluationResult
     public IReadOnlyList<RuleExecutionMetric> RuleMetrics { get; init; } = [];
     /// <summary>Summary of how each changed file was classified for eligibility.</summary>
     public FileEligibilityStatistics FileStatistics { get; init; } = new();
+    /// <summary>Metrics from finding delivery processing (caps, demotion, coordination).</summary>
+    public FindingDeliverySummary? DeliverySummary { get; init; }
+    /// <summary>Repository domain classification applied during this run.</summary>
+    public RepoDomainProfile? DomainProfile { get; init; }
     /// <summary>True when at least one finding was produced by this evaluation run.</summary>
     public bool HasFindings => Findings.Count > 0;
     /// <summary>
