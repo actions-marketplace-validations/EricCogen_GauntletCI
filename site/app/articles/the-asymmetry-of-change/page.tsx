@@ -68,7 +68,7 @@ export default function AsymmetryOfChangePage() {
                 <strong className="text-foreground">Residual Bugs in Python:</strong> A dataset of roughly 5,000 residual Python bugs from prominent open-source projects catalogs defects that went undetected during traditional testing and surfaced only in production <sup><a href="#ref6">[6]</a></sup>.
               </li>
               <li className="pl-6 border-l-2 border-blue-500">
-                <strong className="text-foreground">Observations from the .NET Ecosystem:</strong> In an exploratory analysis of 610 pull requests across 61 open-source .NET repositories (including Polly, Dapper, Newtonsoft.Json, and dotnet/runtime), 133 of 178 PRs submitted without test file modifications (74.7%) contained at least one behavioral risk indicator <sup><a href="#ref7">[7]</a></sup>. This is product research, not a peer-reviewed study, but it is directionally consistent with the broader literature: when production code changes and tests don't, risk accumulates silently.
+                <strong className="text-foreground">Observations from the .NET Ecosystem:</strong> In an exploratory analysis of 610 pull requests across 61 open-source .NET repositories (including Polly, Dapper, Newtonsoft.Json, and dotnet/runtime), 131 of 178 PRs submitted without test file modifications (73.6%) contained at least one behavioral risk indicator <sup><a href="#ref7">[7]</a></sup>. This is product research, not a peer-reviewed study, but it is directionally consistent with the broader literature: when production code changes and tests don't, risk accumulates silently.
               </li>
             </ul>
             <p className="text-muted-foreground leading-relaxed pt-4">
@@ -82,11 +82,11 @@ export default function AsymmetryOfChangePage() {
               Think of every diff as a time machine moving in one direction. The assertions stay where they were written, while the code underneath them moves forward. This creates a dangerous blind spot: <strong>The Implicit Contract.</strong> Consider a guard clause that has existed for years. Because that guard was always there, no one ever felt the need to write an explicit test for the `null` case. The "contract" was implicit in the structure of the code. If a developer removes that guard, the test suite remains green. The suite isn't "broken"; it just never knew the guard was a requirement. It was a silent protector that the tests never bothered to verify.
             </p>
             <div className="bg-slate-100 dark:bg-slate-900 rounded-lg p-4 overflow-x-auto text-sm font-mono text-slate-900 dark:text-slate-100 space-y-2">
-              <div className="text-gray-600 dark:text-gray-400">// Before diff: the implicit contract</div>
+              <div className="text-gray-600 dark:text-gray-400">{"// Before diff: the implicit contract"}</div>
               <div>if (user == null) return;</div>
               <div>Process(user.Name);</div>
               <div className="pt-2"></div>
-              <div className="text-gray-600 dark:text-gray-400">// After diff: guard removed, tests still pass.</div>
+              <div className="text-gray-600 dark:text-gray-400">{"// After diff: guard removed, tests still pass."}</div>
               <div>Process(user.Name);</div>
             </div>
             <p className="text-muted-foreground leading-relaxed">

@@ -52,7 +52,7 @@ export default function CustomRulesPage() {
           <p className="text-sm font-semibold text-cyan-400 uppercase tracking-widest mb-2">Custom Rules</p>
           <h1 className="text-4xl font-bold tracking-tight mb-4">Writing Custom Rules</h1>
           <p className="text-lg text-muted-foreground">
-            GauntletCI is open source. All 30+ built-in rules follow the same pattern. Adding a custom rule means
+            GauntletCI is source-available under the Elastic License 2.0. All 36 built-in rules follow the same pattern. Adding a custom rule means
             implementing one interface, placing the file in one directory, and writing tests. No registration step is needed.
           </p>
         </div>
@@ -299,7 +299,7 @@ CreateFinding(file, summary, evidence, whyItMatters, suggestedAction, confidence
         <section>
           <h2 className="text-2xl font-semibold mb-4">Step 5 - Write tests</h2>
           <p className="text-muted-foreground mb-3">
-            Create <code className="bg-muted px-1 rounded text-sm">src/GauntletCI.Tests/Rules/GCI00XXTests.cs</code>.
+            Create <code className="bg-muted px-1 rounded text-sm">tests/GauntletCI.Tests/Rules/GCI00XXTests.cs</code>.
             Cover at minimum: one true positive, one false positive, and one edge case (empty diff, test-file exclusion, etc.).
           </p>
           <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm overflow-x-auto">
@@ -394,7 +394,7 @@ CreateFinding(file, summary, evidence, whyItMatters, suggestedAction, confidence
           <h2 className="text-2xl font-semibold mb-4">Next steps</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { href: "/docs/rules", label: "Rule Library", desc: "Browse all 30+ built-in detection rules" },
+              { href: "/docs/rules", label: "Rule Library", desc: "Browse all 37 built-in detection rules" },
               { href: "/docs/configuration", label: "Configuration", desc: "Engineering policy and .gauntletci.json options" },
               { href: "/docs/cli-reference", label: "CLI Reference", desc: "All commands, flags, and exit codes" },
             ].map((link) => (

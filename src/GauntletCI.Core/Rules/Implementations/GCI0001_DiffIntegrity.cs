@@ -31,10 +31,41 @@ public class GCI0001_DiffIntegrity : RuleBase
         "Cargo.lock", "go.sum", "composer.lock",
     };
 
+    private static readonly HashSet<string> RoutineCompanionFileNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Dockerfile", "Makefile", "CODEOWNERS", ".gitignore", ".gitattributes", "LICENSE",
+    };
+
+    private static readonly HashSet<string> RoutineCompanionExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".md", ".txt", ".csproj", ".props", ".targets", ".sln", ".slnx", ".slnf",
+        ".yml", ".yaml", ".json", ".editorconfig",
+        ".config", ".resx", ".xaml", ".nuspec", ".proj", ".tt",
+        ".ps1", ".sh", ".cmd", ".cake",
+    };
+
     private static bool IsLockFile(string filePath)
     {
         ArgumentNullException.ThrowIfNull(filePath);
         return LockFileNames.Contains(Path.GetFileName(filePath));
+    }
+
+    /// <summary>
+    /// Files that commonly change alongside C# in real PRs (docs, build wiring, CI) are not mixed-scope noise.
+    /// </summary>
+    private static bool IsRoutineCompanionNonCodeFile(string filePath)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+
+        var fileName = Path.GetFileName(filePath);
+        if (RoutineCompanionFileNames.Contains(fileName))
+            return true;
+
+        if (fileName.StartsWith("PublicAPI.", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var extension = Path.GetExtension(filePath);
+        return RoutineCompanionExtensions.Contains(extension);
     }
 
     public override Task<List<Finding>> EvaluateAsync(
@@ -57,6 +88,7 @@ public class GCI0001_DiffIntegrity : RuleBase
             .Where(x => x.Classification is FileEligibilityClassification.KnownNonSource
                                          or FileEligibilityClassification.UnknownUnsupported)
             .Where(x => !IsLockFile(x.FilePath))
+            .Where(x => !IsRoutineCompanionNonCodeFile(x.FilePath))
             .ToList();
 
         if (hasCodeFiles && nonCodeFiles.Count > 0)
@@ -87,7 +119,7 @@ public class GCI0001_DiffIntegrity : RuleBase
             }
 
             var totalChanged = addedLines.Count + removedLines.Count;
-            if (totalChanged > 10 && whitespaceOnlyPairs > totalChanged * 0.4)
+            if (totalChanged > 20 && whitespaceOnlyPairs > totalChanged * 0.55)
             {
                 findings.Add(CreateFinding(
                     file,

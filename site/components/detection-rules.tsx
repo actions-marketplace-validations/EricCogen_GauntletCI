@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AlertTriangle, Database, Cpu, Shield, Activity, GitBranch, TestTube } from "lucide-react";
 
 export function DetectionRules() {
@@ -44,7 +45,7 @@ export function DetectionRules() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-balance">
-            30+ built-in detection rules
+            37 built-in detection rules
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
             Comprehensive coverage across behavioral risk categories.
@@ -71,12 +72,12 @@ export function DetectionRules() {
         </div>
 
         <div className="mt-10 text-center">
-          <a href="/docs/rules" className="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
+          <Link href="/docs/rules" className="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
             Browse all rules
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
-          </a>
+          </Link>
         </div>
 
       </div>

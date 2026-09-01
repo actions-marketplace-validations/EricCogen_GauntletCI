@@ -26,7 +26,7 @@ const tableRows = [
   {
     scenario: "Pre-commit feedback before a push",
     winner: "gauntlet",
-    note: "Sub-second local diff analysis. NDepend runs a full assembly scan post-build.",
+    note: "Fast local diff analysis (seconds on typical staged changes). NDepend runs a full assembly scan post-build.",
   },
   {
     scenario: "Tracking code quality metrics and technical debt over time",
@@ -57,7 +57,7 @@ const tableRows = [
 
 const featureRows = [
   { label: "Diff-scoped analysis (changed lines only)", gauntlet: "yes" as const, ndepend: "no" as const },
-  { label: "100% local execution, no code upload", gauntlet: "yes" as const, ndepend: "yes" as const },
+  { label: "Core analysis runs locally by default, no code upload", gauntlet: "yes" as const, ndepend: "yes" as const },
   { label: "Pre-commit (before push) feedback", gauntlet: "yes" as const, ndepend: "no" as const },
   { label: "Air-gap / data residency friendly", gauntlet: "yes" as const, ndepend: "yes" as const },
   { label: "Free tier with full rule set", gauntlet: "yes" as const, ndepend: "no" as const },
@@ -158,7 +158,7 @@ export default function VsNDependPage() {
                 "CQLinq - a LINQ-based query language for writing custom metric-based rules",
                 "Technical debt time estimates with trend charts across builds",
                 "Cyclomatic complexity, coupling, cohesion, and other structural metrics",
-                "Runs 100% locally - no code upload, no SaaS dependency",
+                "Core analysis runs locally by default -- no code upload, no SaaS dependency",
                 "Deep Visual Studio and CI/CD integration for .NET teams",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">
@@ -188,8 +188,8 @@ export default function VsNDependPage() {
                   body: "Rules target behavioral drift: removed null guards, altered exception handling, changed concurrency patterns, dropped public API members. These compile fine but break production behavior.",
                 },
                 {
-                  title: "Free, no license server",
-                  body: "GauntletCI is open-source and free. No per-developer license, no activation server, no renewal cycle. Install with a single dotnet tool install command.",
+                  title: "Free Community tier",
+                  body: "GauntletCI is source-available under Elastic License 2.0 with a free Community tier. No per-developer license, no activation server, no renewal cycle. Install with a single dotnet tool install command.",
                 },
               ].map((card) => (
                 <div key={card.title} className="rounded-lg border border-border bg-card/50 p-5">
@@ -269,7 +269,7 @@ export default function VsNDependPage() {
               The distinction matters at the moment of commit. A developer who just added a
               CancellationToken parameter to a public interface method does not need a full
               dependency matrix report - they need to know that the change breaks all existing
-              callers. GauntletCI surfaces that finding in under a second, before the push.
+              callers. GauntletCI surfaces that finding in seconds on typical staged diffs, before the push.
             </p>
             <p className="text-muted-foreground">
               NDepend's strength is longitudinal: tracking how architectural health evolves across

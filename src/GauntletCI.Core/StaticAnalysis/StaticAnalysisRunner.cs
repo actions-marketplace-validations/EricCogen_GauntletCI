@@ -50,22 +50,13 @@ public static class StaticAnalysisRunner
         {
             ct.ThrowIfCancellationRequested();
 
-            // Normalize to OS path separator
-            var relativePath = file.NewPath.Replace('/', Path.DirectorySeparatorChar);
-            var absolutePath = Path.Combine(repoPath, relativePath);
-
-            if (!File.Exists(absolutePath))
+            // Normalize to OS path separator and reject paths outside the repo root
+            if (!RepoPathResolver.TryResolvePathUnderRoot(repoPath, file.NewPath, out var absolutePath))
                 continue;
 
-            string sourceCode;
-            try
-            {
-                sourceCode = await File.ReadAllTextAsync(absolutePath, ct).ConfigureAwait(false);
-            }
-            catch (IOException)
-            {
+            var sourceCode = await GitSourceReader.TryReadAsync(repoPath, diff, file.NewPath, ct).ConfigureAwait(false);
+            if (sourceCode is null)
                 continue;
-            }
 
             var changedLines = file.AddedLines.Select(l => l.LineNumber).ToList();
             var (result, tree) = await Analyzer.AnalyzeFileAsync(

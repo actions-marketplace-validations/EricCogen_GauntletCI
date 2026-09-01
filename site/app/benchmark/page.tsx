@@ -3,11 +3,12 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import discoverySweepDoc from "@eval/benchmark-discovery-sweep.json";
 
 export const metadata: Metadata = {
   title: "The Silver Benchmark | GauntletCI Detection Accuracy",
   description:
-    "618 real .NET OSS pull requests. 30 rules. Precision and recall of each GauntletCI detection rule measured against a labeled corpus of open-source PRs.",
+    "618 real .NET OSS pull requests. Silver metrics for 23 of 37 active rules. Precision and recall measured against a labeled corpus of open-source PRs.",
   alternates: { canonical: "/benchmark" },
   openGraph: {
     images: [{ url: "/og/benchmark.png", width: 1200, height: 630 }],
@@ -19,7 +20,7 @@ const jsonLd = {
   "@type": "Article",
   headline: "The Silver Benchmark",
   description:
-    "618 real .NET OSS pull requests. 30 rules. Precision and recall of each GauntletCI detection rule measured against a labeled corpus.",
+    "618 real .NET OSS pull requests. Silver metrics for 23 of 37 active GauntletCI rules against a labeled OSS PR corpus.",
   url: "https://gauntletci.com/benchmark",
   publisher: {
     "@type": "Organization",
@@ -61,6 +62,22 @@ interface Rule {
   status: RuleStatus;
 }
 
+type DiscoverySweepRow = {
+  id: string;
+  name: string;
+  triggerPct: string;
+  goldPrecision?: string;
+  note?: string;
+};
+
+const discoverySweepJune2026 =
+  discoverySweepDoc.discoveryRows as DiscoverySweepRow[];
+
+const agentGoldByRuleId = discoverySweepDoc.ruleCardAgentGold as Record<
+  string,
+  string
+>;
+
 interface NextStep {
   id: string;
   precision: string;
@@ -88,6 +105,7 @@ function cardBorderClass(status: RuleStatus): string {
 }
 
 function RuleCard({ rule }: { rule: Rule }) {
+  const agentGoldPrecision = agentGoldByRuleId[rule.id];
   return (
     <div
       className={`rounded-xl border bg-card/30 p-5 space-y-4 transition-colors ${cardBorderClass(rule.status)}`}
@@ -160,6 +178,17 @@ function RuleCard({ rule }: { rule: Rule }) {
               <div className="text-xs text-muted-foreground/60 mt-0.5">F1</div>
             </div>
           </div>
+          {agentGoldPrecision && (
+            <p className="text-xs text-muted-foreground/70 leading-relaxed pt-1">
+              Agent gold precision{" "}
+              <span
+                className={`font-semibold ${metricColor(agentGoldPrecision, 70, 50)}`}
+              >
+                {agentGoldPrecision}
+              </span>{" "}
+              (414 human labels, agent corpus; not comparable to Silver P/R)
+            </p>
+          )}
         </div>
 
         {/* Confusion matrix */}
@@ -677,6 +706,14 @@ const nextSteps: NextStep[] = [
   },
 ];
 
+const headToHeadPrioritiesJune2026 = [
+  "GCI0022 Idempotency and Retry Safety",
+  "GCI0024 Resource Lifecycle",
+  "GCI0043 Nullability and Type Safety",
+  "GCI0044 Performance Hotpath Risk",
+  "GCI0046 Pattern Consistency Deviation",
+];
+
 export default function BenchmarkPage() {
   return (
     <>
@@ -700,16 +737,18 @@ export default function BenchmarkPage() {
               The Silver Benchmark
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed text-pretty">
-              618 real .NET OSS pull requests. 30 rules. Every number earned
-              through iteration.
+              618 real .NET OSS pull requests. Silver metrics for 23 of 37
+              active rules. Every number earned through iteration.
             </p>
             <p className="text-muted-foreground leading-relaxed max-w-3xl">
-              This page documents the precision and recall of each GauntletCI
-              detection rule, measured against a labeled corpus of real
-              open-source pull requests. The numbers reflect what it took to
-              get here: labeler rewrites, rule narrowing, skip-guard additions,
-              and calibration passes that surfaced misalignments between what
-              a rule detects and what its labeler measured.
+              This page documents precision and recall for rules calibrated on
+              the Silver corpus — not all 37 active rules have Silver labels
+              yet. Where human gold labels exist on the separate agent corpus,
+              rule cards also show agent gold precision (clearly labeled; not
+              Silver P/R). The numbers reflect labeler rewrites, rule narrowing,
+              skip-guard additions, and calibration passes that surfaced
+              misalignments between what a rule detects and what its labeler
+              measured.
             </p>
           </div>
 
@@ -984,6 +1023,92 @@ export default function BenchmarkPage() {
               (GCI0032) is more useful in production than a rule at 70%
               precision / 90% recall. The recall gap is an active improvement
               target; the precision floor is treated as a hard constraint.
+            </p>
+          </section>
+
+          {/* 7b. Discovery sweep (agent corpus, June 2026) */}
+          <section className="border-t border-border pt-12 space-y-4">
+            <h2 className="text-2xl font-bold tracking-tight">
+              Discovery sweep (separate corpus)
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Silver metrics above come from 618 labeled fixtures. A separate
+              agent corpus (606 discovery fixtures, refreshed June 2026) measures
+              raw trigger rate across real OSS diffs.{" "}
+              <strong className="font-medium text-foreground">
+                Do not compare trigger rates or gold-label precision below to
+                Silver precision/recall in the rule cards above.
+              </strong>{" "}
+              Use the discovery sweep to spot volume and noise candidates before
+              Silver labelers catch up.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Human-adjudicated gold labels (414 rows, agent corpus only) and the
+              internal rule audit JSON are documented in{" "}
+              <a
+                href="https://github.com/EricCogen/GauntletCI/blob/main/docs/rules.md#corpus-validation-agent--internal"
+                className="text-cyan-400 hover:text-cyan-300 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                docs/rules.md (corpus validation)
+              </a>{" "}
+              and{" "}
+              <a
+                href="https://github.com/EricCogen/GauntletCI/blob/main/eval/benchmark-discovery-sweep.json"
+                className="text-cyan-400 hover:text-cyan-300 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                eval/benchmark-discovery-sweep.json
+              </a>{" "}
+              and{" "}
+              <a
+                href="https://github.com/EricCogen/GauntletCI/blob/main/eval/rule-audit.json"
+                className="text-cyan-400 hover:text-cyan-300 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                eval/rule-audit.json
+              </a>{" "}
+              (agent corpus metrics; not Silver data).
+            </p>
+            <div className="rounded-xl border border-border bg-card/20 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">Rule</th>
+                    <th className="px-4 py-3 font-medium">Discovery trigger rate</th>
+                    <th className="px-4 py-3 font-medium hidden md:table-cell">
+                      Gold-label precision
+                    </th>
+                    <th className="px-4 py-3 font-medium hidden sm:table-cell">Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {discoverySweepJune2026.map((row) => (
+                    <tr key={row.id} className="border-b border-border/60 last:border-0">
+                      <td className="px-4 py-3 font-mono text-cyan-400/90">{row.id}</td>
+                      <td className="px-4 py-3">{row.triggerPct}</td>
+                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
+                        {row.goldPrecision ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                        {row.note ?? row.name}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted-foreground/80">
+              Gold-label precision uses 414 adjudicated expected_findings rows in
+              the agent corpus (June 2026 latest run). Silver benchmark cards use
+              a different fixture set and labeler.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Head-to-head tuning priorities (June 2026 audit):{" "}
+              {headToHeadPrioritiesJune2026.join(" · ")}
             </p>
           </section>
 

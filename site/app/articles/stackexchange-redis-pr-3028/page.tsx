@@ -43,11 +43,11 @@ const jsonLd = {
 };
 
 const findings = [
-  { rule: "GCI0015", title: "Async/Await Pattern Changes", count: 671, severity: "High", description: "Async method implementation changes" },
-  { rule: "GCI0016", title: "Promise/Task Handling", count: 640, severity: "High", description: "Concurrent operation pattern changes" },
-  { rule: "GCI0003", title: "Signature Changes", count: 568, severity: "Block", description: "Breaking API changes" },
-  { rule: "GCI0004", title: "API Exposure", count: 447, severity: "High", description: "Visibility changes in public APIs" },
-  { rule: "GCI0006", title: "Null Dereference Risk", count: 381, severity: "Warn", description: "Nullable access without checks" },
+  { rule: "GCI0015", title: "Data Integrity Risk", count: 671, severity: "Block", description: "Unchecked casts, mass assignment, and silent SQL discard patterns" },
+  { rule: "GCI0016", title: "Concurrency and State Risk", count: 640, severity: "Block", description: "async void, blocking .Result/.Wait(), lock(this), and Thread.Sleep" },
+  { rule: "GCI0003", title: "Behavioral Change Detection", count: 568, severity: "Block", description: "Incompatible method signature and contract changes" },
+  { rule: "GCI0004", title: "Breaking Change Risk", count: 447, severity: "Warn", description: "[Obsolete] attribute added or removed on public APIs" },
+  { rule: "GCI0006", title: "Edge Case Handling", count: 381, severity: "Warn", description: "Nullable access without checks" },
 ];
 
 const readingTime = "2 min read";
@@ -56,7 +56,7 @@ export default function RedisAnalysisPage() {
   return (
     <main className="min-h-screen flex flex-col">
       <Header />
-      <Breadcrumbs items={[{ label: "Articles", href: "/articles" }, { label: "StackExchange.Redis PR #3028" }]} />
+      <Breadcrumbs />
 
       <article className="flex-1 max-w-3xl mx-auto px-6 py-12">
         <JsonLd data={jsonLd} />
@@ -89,7 +89,7 @@ export default function RedisAnalysisPage() {
             </div>
             <div className="bg-red-500/5 p-4 rounded border-l-4 border-red-500">
               <div className="text-3xl font-bold text-red-500">568</div>
-              <div className="text-sm text-muted-foreground">Signature Changes</div>
+              <div className="text-sm text-muted-foreground">Behavioral Changes</div>
             </div>
           </div>
         </section>

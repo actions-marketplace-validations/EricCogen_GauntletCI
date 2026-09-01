@@ -6,6 +6,7 @@ using GauntletCI.Cli.Analysis;
 using GauntletCI.Cli.Audit;
 using GauntletCI.Cli.Baseline;
 using GauntletCI.Cli.Enrichment;
+using GauntletCI.Cli.Licensing;
 using GauntletCI.Cli.LlmDaemon;
 using GauntletCI.Cli.Output;
 using GauntletCI.Cli.Presentation;
@@ -32,7 +33,7 @@ public static class AnalyzeCommand
         var stagedFlag = new Option<bool>("--staged", "Analyse staged changes (git diff --cached)");
         var unstagedFlag = new Option<bool>("--unstaged", "Analyse unstaged changes (git diff)");
         var allChangesFlag = new Option<bool>("--all-changes", "Analyse all local changes: staged + unstaged (git diff HEAD)");
-        var codebaseOption = new Option<DirectoryInfo?>("--codebase", "Full codebase scan: analyse all C# files in directory (e.g., ./src). Treats all code as new for rule evaluation. This is the default when no other source is specified.");
+        var codebaseOption = new Option<DirectoryInfo?>("--codebase", "Full codebase scan: analyse all C# files in directory (e.g., ./src). Treats all code as new for rule evaluation.");
         var repoOption = new Option<DirectoryInfo>(
             "--repo",
             () => new DirectoryInfo(Directory.GetCurrentDirectory()),
@@ -140,11 +141,11 @@ public static class AnalyzeCommand
                 output = Path.GetExtension(output).TrimStart('.').ToLowerInvariant();
             }
 
-            // Default to full codebase scan if no explicit source is provided and stdin is not redirected
+            // Default to staged changes when no explicit source is provided and stdin is not redirected
             if (diffFile is null && commit is null && !staged && !unstaged && !allChanges &&
                 codebase is null && !Console.IsInputRedirected)
             {
-                codebase = repo;
+                staged = true;
             }
 
             // Enforce single diff source
@@ -225,26 +226,30 @@ public static class AnalyzeCommand
                 if (ctx.ParseResult.FindResultFor(verboseFlag) is null)
                     verbose = config.Output.Verbose;
 
-                // Remote subscription check -- only when a licensed feature is in use.
-                // Fires once per 24h (cached). Fails open if the network is unreachable.
-                bool usingLicensedFeature = withLlm || withExpertCtx || ghPrComments || githubChecks;
-                if (usingLicensedFeature)
+                notifySlack ??= config.Notifications.SlackWebhook;
+                notifyTeams ??= config.Notifications.TeamsWebhook;
+
+                var useBaseline = !noBaseline && BaselineStore.Exists(repo.FullName);
+                var engineeringPolicyWillRun =
+                    config.Experimental.EngineeringPolicy.Enabled && withLlm;
+                var requiredTier = PaidFeatureGate.ComputeAnalyzeRequiredTier(
+                    withLlm, withExpertCtx, ghPrComments, githubChecks,
+                    withTicketCtx, withCoverage,
+                    !string.IsNullOrWhiteSpace(notifySlack),
+                    !string.IsNullOrWhiteSpace(notifyTeams),
+                    useBaseline, engineeringPolicyWillRun);
+
+                var licenseEnvVar = config.Llm?.LicenseKeyEnv ?? "GAUNTLETCI_LICENSE";
+                var licenseExit = await PaidFeatureGate.TryEnsureTierAsync(
+                    requiredTier > LicenseTier.Community,
+                    requiredTier,
+                    "analyze with the selected options",
+                    licenseEnvVar,
+                    ct);
+                if (licenseExit is int exitCode)
                 {
-                    var envVar = config.Llm?.LicenseKeyEnv ?? "GAUNTLETCI_LICENSE";
-                    var rawToken = LicenseService.ReadRawToken(envVar);
-                    if (rawToken is not null)
-                    {
-                        var (netValid, netReason) = await Licensing.NetworkLicenseValidator
-                            .ValidateAsync(rawToken, ct);
-                        if (!netValid)
-                        {
-                            Console.Error.WriteLine(
-                                $"[GauntletCI] License subscription is no longer active ({netReason ?? "cancelled"}). " +
-                                "Renew at https://gauntletci.com/pricing or run: gauntletci license renew");
-                            ctx.ExitCode = 1;
-                            return;
-                        }
-                    }
+                    ctx.ExitCode = exitCode;
+                    return;
                 }
 
                 // Severity: only apply config value if user did not explicitly pass --severity
@@ -265,19 +270,15 @@ public static class AnalyzeCommand
                     OutputFormat = output ?? "text",
                 });
 
-                // Notifications: CLI arg takes precedence, then config, then env var (handled downstream)
-                notifySlack ??= config.Notifications.SlackWebhook;
-                notifyTeams ??= config.Notifications.TeamsWebhook;
-
                 var ignoreList = IgnoreList.Load(repo.FullName);
                 var orchestrator = RuleOrchestrator.CreateDefault(config, repoPath: repo.FullName);
 
                 // Run static analysis on changed C# files (null when no repo path or no .cs changes)
-                var repoPath = diffFile is null ? repo.FullName : null;
+                var repoPath = repo.FullName;
                 var sw = Stopwatch.StartNew();
                 var staticAnalysis = await StaticAnalysisRunner.RunAsync(diff, repoPath, ct);
 
-                var result = await orchestrator.RunAsync(diff, staticAnalysis, ignoreList: ignoreList);
+                var result = await orchestrator.RunAsync(diff, staticAnalysis, ignoreList: ignoreList, ct: ct);
 
                 // Enrichment pipeline: automatically enrich findings with code snippets, expert context, etc.
                 try
@@ -385,14 +386,21 @@ public static class AnalyzeCommand
                     if (config.Experimental.EngineeringPolicy.Enabled && llm.IsAvailable)
                     {
                         setStatus("Checking standards...");
-                        var policyPath = Path.Combine(repo.FullName, config.Experimental.EngineeringPolicy.Path);
-                        var license = LicenseService.Load(config.Llm?.LicenseKeyEnv ?? "GAUNTLETCI_LICENSE");
-                        var isLicensed = license.IsLicensed;
-                        var policyFindings = await EngineeringPolicyEvaluator.EvaluateAsync(
-                            diff, policyPath, llm, isLicensed,
-                            config.Experimental.EngineeringPolicy.MaxDiffChars,
-                            ctx.GetCancellationToken());
-                        result.Findings.AddRange(policyFindings);
+                        if (!RepoPathResolver.TryResolvePathUnderRoot(
+                                repo.FullName, config.Experimental.EngineeringPolicy.Path, out var policyPath))
+                        {
+                            Console.Error.WriteLine(
+                                "[GauntletCI] Engineering policy path must resolve inside the repository root. Skipping policy evaluation.");
+                        }
+                        else
+                        {
+                            var license = LicenseService.Load(config.Llm?.LicenseKeyEnv ?? "GAUNTLETCI_LICENSE");
+                            var policyFindings = await EngineeringPolicyEvaluator.EvaluateAsync(
+                                diff, policyPath, llm, license.IsLicensed,
+                                config.Experimental.EngineeringPolicy.MaxDiffChars,
+                                ctx.GetCancellationToken());
+                            result.Findings.AddRange(policyFindings);
+                        }
                     }
                 }
 
@@ -469,6 +477,19 @@ public static class AnalyzeCommand
                             }).ToList(),
                             result.FileStatistics,
                             SuppressedByBaseline = suppressedByBaseline,
+                            Delivery = result.DeliverySummary is null ? null : new
+                            {
+                                result.DeliverySummary.InputCount,
+                                result.DeliverySummary.OutputCount,
+                                NotShown = result.DeliverySummary.InputCount - result.DeliverySummary.OutputCount,
+                                result.DeliverySummary.DroppedByGlobalCap,
+                                result.DeliverySummary.DroppedByPerRuleCap,
+                                result.DeliverySummary.DroppedByFileLevelDemotion,
+                                result.DeliverySummary.DroppedByProvenanceFilter,
+                                result.DeliverySummary.DroppedByDomainFilter,
+                                result.DeliverySummary.CoordinationBoostsApplied,
+                                result.DeliverySummary.SemanticsBoostsApplied,
+                            },
                         };
                         var json = JsonSerializer.Serialize(jsonResult, new JsonSerializerOptions { WriteIndented = true });
                         Console.WriteLine(json);

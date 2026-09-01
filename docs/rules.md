@@ -27,12 +27,83 @@ Rules do not modify code and do not block merges on their own. They surface info
 
 | Category | Count | Rule IDs |
 |----------|------:|----------|
-| **Active** (emit findings by default) | 34 | GCI0001, GCI0003–GCI0007, GCI0010, GCI0012, GCI0015–GCI0016, GCI0020–GCI0022, GCI0024, GCI0029, GCI0032, GCI0035–GCI0036, GCI0038–GCI0039, GCI0041–GCI0049, GCI0050–GCI0053, GCI0056–GCI0057 |
+| **Implemented** (`IRule` classes in Core) | 39 | All classes under `Rules/Implementations/` |
+| **Active** (emit findings by default) | 37 | GCI0001, GCI0003–GCI0007, GCI0010, GCI0012, GCI0015–GCI0016, GCI0019, GCI0020–GCI0022, GCI0024, GCI0029, GCI0032, GCI0035–GCI0036, GCI0038–GCI0039, GCI0041–GCI0049, GCI0050–GCI0053, GCI0056–GCI0059 |
 | **Implemented, disabled by default** | 2 | GCI0054 (async void — use GCI0016), GCI0055 (regex signatures — use GCI0003) |
 | **Reserved / consolidated** | 3 | GCI0028 (unassigned), GCI0030 (→ GCI0024), GCI0033 (→ GCI0016) |
-| **Documented below, not yet implemented** | 18 | GCI0002, GCI0005, GCI0008–GCI0009, GCI0011, GCI0013–GCI0014, GCI0017–GCI0019, GCI0023, GCI0025–GCI0027, GCI0031, GCI0034, GCI0037, GCI0040 |
+| **Documented below, not yet implemented** | 17 | GCI0002, GCI0005, GCI0008–GCI0009, GCI0011, GCI0013–GCI0014, GCI0017–GCI0018, GCI0023, GCI0025–GCI0027, GCI0031, GCI0034, GCI0037, GCI0040 |
 
 Sections marked **Status: Not yet implemented** describe planned behavior only. The engine discovers rules via reflection on `IRule` classes under `Rules/Implementations/`; IDs without a class never run, regardless of `.gauntletci.json`.
+
+---
+
+## Corpus validation (agent / internal)
+
+Ground-truth labels live in the agent corpus at `%USERPROFILE%\.gauntletci\corpus.db` (not the empty `./data/gauntletci-corpus.db` shell).
+
+**Last queried:** 2026-06-15 (`python scripts/corpus-validation-summary.py` after audit-pass2 latest-run query fix + snapshot #18).
+
+| Metric | Value |
+|--------|------:|
+| Fixtures | 608 (606 Discovery, 2 Gold) |
+| Human gold `expected_findings` rows | 414 |
+| Distinct rules with gold labels | 41 |
+| Rule runs stored | 6,162 |
+| `aggregates` table last updated | 2026-06-13 |
+| Audit snapshot last taken | 2026-06-15 (snapshot #18) |
+
+**Latest-run selection:** `rule_runs.id` is a UUID string. Gold metrics and `eval/benchmark-discovery-sweep.json` use the latest **completed** run per fixture (`ORDER BY completed_at_utc DESC, id DESC`). Do not use `MAX(id)` on UUIDs.
+
+**Audit snapshot (labeled subset):** tp/fp/fn from `expected_findings` vs latest completed run (`audit_snapshot_rows` snapshot #18).
+
+| Rule | Labeled | TP | FP | FN | Precision |
+|------|--------:|---:|---:|---:|----------:|
+| GCI0004 | 53 | 6 | 1 | 28 | 0.86 |
+| GCI0003 | 44 | 13 | 1 | 14 | 0.93 |
+| GCI0006 | 29 | 10 | 1 | 7 | 0.91 |
+| GCI0015 | 26 | 1 | 0 | 10 | 1.00 |
+| GCI0016 | 15 | 2 | 0 | 4 | 1.00 |
+| GCI0036 | 16 | 1 | 0 | 3 | 1.00 |
+| GCI0010 | 19 | 0 | 0 | 2 | — |
+| GCI0024 | 19 | 0 | 0 | 2 | — |
+
+**Gold labels vs latest run** (414 `expected_findings` rows in DB; min 3 labeled pairs per rule):
+
+| Rule | TP | FP | FN | Precision |
+|------|---:|---:|---:|----------:|
+| GCI0004 | 6 | 1 | 28 | 0.86 |
+| GCI0003 | 13 | 1 | 14 | 0.93 |
+| GCI0006 | 10 | 1 | 7 | 0.91 |
+| GCI0015 | 1 | 0 | 10 | 1.00 |
+| GCI0016 | 2 | 0 | 4 | 1.00 |
+| GCI0036 | 1 | 0 | 3 | 1.00 |
+
+**Discovery-tier trigger rates** (606-fixture sweep; scored 2026-06-13). Per-fixture `expected.json` exists on only ~24 fixtures, so `aggregates.precision_score` for Discovery is mostly 0 — use the gold-label table above for labeled precision.
+
+| Rule | Trigger rate |
+|------|-------------:|
+| GCI0019 | 0.22 |
+| GCI0003 | 0.18 |
+| GCI0006 | 0.12 |
+| GCI0024 | 0.09 |
+| GCI0001 | 0.08 |
+| GCI0045 | 0.06 |
+| GCI0043 | 0.06 |
+| GCI0032 | 0.06 |
+
+**High trigger, low gold precision (noise candidates):** GCI0019 (22% trigger, unlabeled discovery). On the latest completed discovery run, GCI0010 and GCI0024 show recall gaps (FN on labeled fixtures, no FP on latest run). Prior aggregate snapshots showed lower precision when stale runs were selected via `MAX(id)` on UUID run IDs (fixed in pass-2 audit).
+
+**Refresh after rule changes:**
+
+1. `.\scripts\refresh-agent-corpus.ps1` — or manually:
+2. `gauntletci corpus run-all --tier discovery --db %USERPROFILE%\.gauntletci\corpus.db`
+3. `gauntletci corpus score --db %USERPROFILE%\.gauntletci\corpus.db`
+4. `python scripts/corpus-validation-summary.py` — update this section from the JSON output
+5. `gauntletci corpus audit-snapshot --db <path>` (or `python scripts/corpus-audit-snapshot.py`) — refresh `audit_snapshots`
+6. `python scripts/build-rule-audit.py --full-corpus` then `python scripts/corpus-rule-audit-drift.py` — regenerate and verify `eval/rule-audit.json` labeled metrics (~10s on agent DB)
+7. `python scripts/export-benchmark-discovery-sweep.py` then `python scripts/corpus-benchmark-discovery-drift.py` — refresh `eval/benchmark-discovery-sweep.json` and verify vs agent DB (CI: `.github/workflows/benchmark-discovery-drift.yml` with `--skip-if-missing-db`)
+
+The public [benchmark page](https://gauntletci.com/benchmark) keeps Silver P/R on rule cards and adds **agent gold precision** (where 414 human labels exist) plus a separate discovery-sweep table. Do not treat those as Silver metrics.
 
 ---
 
@@ -44,15 +115,15 @@ This document is prepared for an independent third-party review of the GauntletC
 
 2. **Should any rules be adjusted?** A rule may be detecting the right *category* of risk but using patterns that are too loose (causing false positives), too strict (missing real cases), or calibrated at the wrong confidence level. If the detection logic needs narrowing or the confidence level is wrong, tell us.
 
-3. **Are there important risk categories we have missed?** We maintain 30+ rules today, and the catalog continues to evolve. We do not believe this is exhaustive. If you can identify a class of risk that regularly causes production incidents, security vulnerabilities, or data loss: and that a diff-level static analysis could plausibly detect: we want to add it.
+3. **Are there important risk categories we have missed?** We ship 39 rule implementations today (37 active by default), and the catalog continues to evolve. We do not believe this is exhaustive. If you can identify a class of risk that regularly causes production incidents, security vulnerabilities, or data loss: and that a diff-level static analysis could plausibly detect: we want to add it.
 
 ### What GauntletCI is (and is not)
 
 Understanding these constraints will help you evaluate the rules fairly:
 
 - **It analyzes diffs, not full codebases.** GauntletCI sees only the lines that were added or removed in a pull request. It cannot reason about the overall structure of the codebase, call graphs, or runtime state. A rule that would require reading the entire file or tracing a call chain is out of scope.
-- **It is fully deterministic.** There is no machine learning, no network calls, and no external lookups. Every detection is a text pattern, a structural heuristic, or a count. This is intentional: deterministic rules are auditable, explainable, and fast.
-- **It must complete in under one second per diff.** Rules need to be lightweight. Regex matching on added/removed lines is the primary tool. Rules that require parsing, compiling, or AST traversal are not feasible today.
+- **Core detection is fully deterministic.** There is no machine learning in the rule engine. Optional LLM enrichment and paid integrations (GitHub, webhooks, license check, Shared telemetry) may use the network when you enable them. Every core detection is a text pattern, a structural heuristic, Roslyn diagnostic, or count.
+- **It is designed for fast pre-commit feedback.** Typical small staged diffs complete in seconds. Large diffs or full codebase scans take longer. Rules use diff-line heuristics plus targeted Roslyn parsing on changed C# files (no full solution build).
 - **It is not a replacement for a security scanner or linter.** GauntletCI is a change-risk signal, not a comprehensive static analysis platform. It is meant to surface things a human reviewer might miss at merge time: not to replace SAST tools, dependency auditors, or test coverage tools.
 - **Findings are advisory by default.** No rule automatically blocks a merge. High-confidence findings are *intended* to block, but the enforcement mechanism is up to the team using the tool.
 - **It is primarily focused on C#/.NET.** Some rules are language-agnostic (file naming, diff shape, logging patterns). Most rules target C# idioms. If you have expertise in another stack, note it: we may expand language support later.
@@ -123,8 +194,7 @@ These rules examine the shape of the diff itself rather than the code it contain
 
 ### GCI0019 · Confidence and Evidence
 
-**Status:** Not yet implemented (spec only)
-
+**Default severity:** Info
 **Confidence:** Low
 **What it detects:** Two checks. First, it identifies binary files: such as images, PDFs, compiled executables, or font files: included in the diff, since their contents cannot be inspected by static analysis. Second, it runs as a post-processor after all other rules: if the diff changes more than 200 lines but no other rules produced findings, it flags the possibility of hidden risks that deterministic rules did not catch.
 **Why it matters:** Binary files cannot be scanned for credentials, logic errors, or security issues using text-based analysis. Large diffs with no findings may simply mean the code is clean, but they may also mean the risks are subtle enough to evade automated checks.

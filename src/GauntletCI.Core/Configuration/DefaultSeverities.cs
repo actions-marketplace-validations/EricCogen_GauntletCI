@@ -20,6 +20,7 @@ internal static class DefaultSeverities
             ["GCI0012"] = RuleSeverity.Block,
             ["GCI0015"] = RuleSeverity.Block,
             ["GCI0016"] = RuleSeverity.Block,
+            ["GCI0019"] = RuleSeverity.Info,
             ["GCI0020"] = RuleSeverity.Block,
             ["GCI0021"] = RuleSeverity.Block,
             ["GCI0036"] = RuleSeverity.Block,
@@ -27,7 +28,7 @@ internal static class DefaultSeverities
             ["GCI0052"] = RuleSeverity.Block,
 
             // Warn: visible by default, non-blocking
-            ["GCI0001"] = RuleSeverity.Warn,
+            ["GCI0001"] = RuleSeverity.Info,
             ["GCI0004"] = RuleSeverity.Warn,
             ["GCI0006"] = RuleSeverity.Warn,
             ["GCI0022"] = RuleSeverity.Warn,
@@ -53,6 +54,7 @@ internal static class DefaultSeverities
             ["GCI0049"] = RuleSeverity.Info,
             ["GCI0056"] = RuleSeverity.Info,
             ["GCI0058"] = RuleSeverity.Block,
+            ["GCI0059"] = RuleSeverity.Block,
 
             // None: disabled by default (duplicate coverage elsewhere)
             ["GCI0054"] = RuleSeverity.None, // duplicate coverage — see GCI0016

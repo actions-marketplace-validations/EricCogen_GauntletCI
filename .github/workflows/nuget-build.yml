@@ -13,10 +13,10 @@ jobs:
       packages: write
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 8.0.x
 
@@ -33,6 +33,7 @@ jobs:
       run: dotnet pack src/GauntletCI.Cli/GauntletCI.Cli.csproj --no-build --configuration Release --output packaging/
 
     - name: Publish to NuGet.org
+      if: ${{ vars.NUGET_PUSH_ENABLED == 'true' }}
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: dotnet nuget push packaging/*.nupkg -k "$NUGET_API_KEY" -s https://api.nuget.org/v3/index.json --skip-duplicate

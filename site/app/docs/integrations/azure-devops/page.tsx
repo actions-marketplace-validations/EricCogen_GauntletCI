@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { buildFaqSchema, softwareApplicationSchema } from "@/lib/schemas";
 import { IntegrationStatusBanner } from "../_components/integration-status-banner";
+import { IntegrationRelatedLinks } from "../_components/integration-related-links";
 
 export const metadata: Metadata = {
   title: "Azure DevOps Task | GauntletCI Docs",
@@ -150,7 +151,7 @@ export default function AzureDevOpsPage() {
               <div className="flex items-start gap-2">
                 <span className="text-muted-foreground/50 text-xs w-5 shrink-0">00:01</span>
                 <span className="text-foreground">
-                  GauntletCI: 3 finding(s) from 42 rules evaluated.
+                  GauntletCI: 3 finding(s) from 37 rules evaluated.
                 </span>
               </div>
               <div className="flex items-start gap-2">
@@ -206,7 +207,7 @@ export default function AzureDevOpsPage() {
                   ["sensitivity", "balanced", "strict | balanced | permissive. Controls the confidence threshold for findings."],
                   ["failOnBlock", "true", "Set the task result to Failed when any Block-severity finding is produced."],
                   ["workingDirectory", "$(Build.SourcesDirectory)", "Root of the .NET repository. Passed as the working directory for the GauntletCI process."],
-                  ["gauntletciVersion", "latest", "NuGet version to install. Use 'latest' or pin to a specific version such as '2.1.1'."],
+                  ["gauntletciVersion", "latest", "NuGet version to install. Use 'latest' or pin to a specific version such as '2.8.1'."],
                 ].map(([name, def, desc]) => (
                   <tr key={name}>
                     <td className="px-4 py-2 font-mono text-xs text-cyan-400">{name}</td>
@@ -241,6 +242,7 @@ export default function AzureDevOpsPage() {
             policy, and select your GauntletCI pipeline. Set it to Required.
           </p>
         </section>
+        <IntegrationRelatedLinks />
       </div>
     </>
   );

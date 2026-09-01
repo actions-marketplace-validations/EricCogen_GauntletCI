@@ -15,7 +15,7 @@ const table = [
   { feature: "Primary focus",              gauntlet: "Behavioral regressions in the diff",          snyk: "Known vulnerabilities in dependencies and code" },
   { feature: "Analysis scope",             gauntlet: "Changed diff lines only",                     snyk: "Full dependency tree + file scan" },
   { feature: "Data leaves the machine",    gauntlet: "By default, no -- core analysis is local",    snyk: "Yes -- SaaS platform, code sent to Snyk servers" },
-  { feature: "Pre-commit speed",           gauntlet: "Under 1 second",                              snyk: "Seconds to minutes (network round-trip)" },
+  { feature: "Pre-commit speed",           gauntlet: "Seconds on typical staged diffs",           snyk: "Seconds to minutes (network round-trip)" },
   { feature: "Account required",           gauntlet: "No -- works fully offline",                   snyk: "Yes -- Snyk account and authentication required" },
   { feature: "Air-gap / data residency",   gauntlet: "Yes -- core engine requires no network",      snyk: "No -- requires Snyk cloud for most features" },
   { feature: "False positives on old code",gauntlet: "None -- diff-scoped by design",               snyk: "Yes -- reports pre-existing issues on every run" },
@@ -34,7 +34,7 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "GauntletCI vs Snyk: Behavioral Risk Detection vs Vulnerability Scanning",
-  "description": "Snyk scans dependencies and code for known vulnerabilities. GauntletCI detects behavioral regressions in the lines you changed -- pre-commit, 100% local, zero false positives on pre-existing code.",
+  "description": "Snyk scans dependencies and code for known vulnerabilities. GauntletCI detects behavioral regressions in the lines you changed -- pre-commit, core analysis runs locally by default, zero false positives on pre-existing code.",
   "url": "https://gauntletci.com/compare/gauntletci-vs-snyk",
   "publisher": { "@type": "Organization", "name": "GauntletCI", "url": "https://gauntletci.com" },
 };
@@ -108,8 +108,8 @@ export default function SnykComparePage() {
             <p className="text-sm text-muted-foreground leading-relaxed">
               GauntletCI runs entirely on your machine. It reads the git diff, applies
               deterministic behavioral rules to the changed lines, and reports risk introduced
-              by this specific change -- before the commit is created. No code leaves the
-              machine. No account required. No network call.
+              by this specific change -- before the commit is created. By default, no code leaves the
+              machine. No account required. No network call for core analysis.
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed">
               GauntletCI answers: "Did this change remove a guard clause?", "Did it alter a
@@ -233,7 +233,7 @@ export default function SnykComparePage() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               {[
                 "You want pre-commit detection of behavioral regressions before code review",
-                "Your team needs 100% local execution with no data leaving the machine",
+                "Your team needs core analysis to run locally by default with no data leaving the machine",
                 "You work in a .NET / C# codebase and want diff-aware behavioral rules",
                 "You operate in an air-gapped or strict data residency environment",
                 "You want findings scoped only to what changed -- zero noise from pre-existing issues",

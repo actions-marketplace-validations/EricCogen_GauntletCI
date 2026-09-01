@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CaseStudyLayout } from "../_components/case-study-layout";
+import { CaseStudyLayout, type CaseStudyDiffLine } from "../_components/case-study-layout";
 
 export const metadata: Metadata = {
   title: "Case Study: Paired Implementation Drift in StackExchange.Redis | GauntletCI",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: { images: [{ url: "/og/case-studies.png", width: 1200, height: 630 }] },
 };
 
-const diffLines = [
+const diffLines: CaseStudyDiffLine[] = [
   { type: "context", line: "// PR #2995: cluster-aware subscription cleanup in Subscription.cs" },
   { type: "context", line: "internal sealed class SingleNodeSubscription : Subscription" },
   { type: "context", line: "{" },
@@ -29,7 +29,7 @@ const diffLines = [
   { type: "added", line: "                scratch[count++] = server.Key;" },
   { type: "context", line: "    }" },
   { type: "context", line: "}" },
-] as const;
+];
 
 const findingBody = [
   "[GCI0058] Paired Implementation Consistency",
@@ -91,9 +91,36 @@ export default function StackExchangeRedisPairedImplementationPage() {
                 state, and application code still sees a healthy multiplexer.
               </p>
               <p>
-                Greptile and Qodo surfaced this defect in eval-lab runs. GauntletCI originally
-                missed it while emitting dozens of lower-signal findings on the same large diff.
+                Greptile, Qodo, and CodeRabbit surfaced this defect in eval-lab runs. GauntletCI originally
+                missed it while emitting dozens of lower-signal findings on the same large diff; GCI0058 now catches it deterministically.
               </p>
+            </>
+          ),
+        },
+
+        {
+          title: "Eval-lab comparison (same diff)",
+          children: (
+            <>
+              <p>
+                Private eval-lab PR #7 mirrors this diff. Scorecard: eval/scorecards/stackexchange-redis-pr-2995.json (May 2026 harvest).
+              </p>
+              <table className="w-full text-sm border border-border mt-4">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="text-left p-2">Tool</th>
+                    <th className="text-left p-2">Caught inversion</th>
+                    <th className="text-left p-2">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className="p-2">GauntletCI</td><td className="p-2">Yes (GCI0058)</td><td className="p-2">16 findings, library profile + delivery cap</td></tr>
+                  <tr><td className="p-2">Greptile</td><td className="p-2">Yes</td><td className="p-2">Inverted RemoveDisconnectedEndpoints</td></tr>
+                  <tr><td className="p-2">Qodo</td><td className="p-2">Yes</td><td className="p-2">Inline review on Subscription.cs</td></tr>
+                  <tr><td className="p-2">CodeRabbit</td><td className="p-2">Yes</td><td className="p-2">Walkthrough cited inverted RemoveDisconnectedEndpoints (eval-lab PR #7 harvest)</td></tr>
+                  <tr><td className="p-2">CodeQL</td><td className="p-2">No</td><td className="p-2">Same-defect scoring: no matching alert</td></tr>
+                </tbody>
+              </table>
             </>
           ),
         },

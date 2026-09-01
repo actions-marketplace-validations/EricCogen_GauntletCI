@@ -14,10 +14,10 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
@@ -28,6 +28,8 @@ jobs:
         run: dotnet build GauntletCI.slnx --no-restore --configuration Release
 
       - name: Test
+        env:
+          GAUNTLETCI_E2E_STRICT: "1"
         run: dotnet test GauntletCI.slnx --no-build --configuration Release --verbosity normal
 
   update-badge:
@@ -38,12 +40,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
@@ -53,13 +55,18 @@ jobs:
       - name: Build
         run: dotnet build GauntletCI.slnx --no-restore --configuration Release
 
+      - name: Pack GauntletCI tool
+        run: dotnet pack src/GauntletCI.Cli/GauntletCI.Cli.csproj -c Release --no-build -o ./artifacts/nupkg -p:PackageVersion=0.0.0-ci.${{ github.run_number }}
+
+      - name: Install GauntletCI from local pack
+        run: dotnet tool install -g GauntletCI --add-source ./artifacts/nupkg --version 0.0.0-ci.${{ github.run_number }}
+
       - name: Run GauntletCI on last commit
         id: analyze
         run: |
           git diff HEAD~1..HEAD > main.diff
           set +e
-          OUTPUT=$(dotnet run --project src/GauntletCI.Cli --no-build --configuration Release -- \
-            analyze --no-banner --ascii < main.diff 2>&1)
+          OUTPUT=$(gauntletci analyze --no-banner --ascii < main.diff 2>&1)
           EXIT_CODE=$?
           set -e
           FINDINGS=$(echo "$OUTPUT" | grep -oP 'Findings\s+:\s+\K\d+' || echo "0")
@@ -105,12 +112,12 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
@@ -120,14 +127,29 @@ jobs:
       - name: Build
         run: dotnet build GauntletCI.slnx --no-restore --configuration Release
 
+      - name: Pack GauntletCI tool
+        run: dotnet pack src/GauntletCI.Cli/GauntletCI.Cli.csproj -c Release --no-build -o ./artifacts/nupkg -p:PackageVersion=0.0.0-ci.${{ github.run_number }}
+
+      - name: Install GauntletCI from local pack
+        run: dotnet tool install -g GauntletCI --add-source ./artifacts/nupkg --version 0.0.0-ci.${{ github.run_number }}
+
       - name: Generate PR diff
         run: git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} > pr.diff
 
       - name: Analyze with GauntletCI
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GAUNTLETCI_LICENSE: ${{ secrets.GAUNTLETCI_LICENSE }}
           GAUNTLETCI_PR_NUMBER: ${{ github.event.pull_request.number }}
           GAUNTLETCI_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-        run: >
-          dotnet run --project src/GauntletCI.Cli --no-build --configuration Release --
-          analyze --no-banner --ascii --github-annotations --github-pr-comments --severity warn --sensitivity balanced --no-baseline < pr.diff
+        run: |
+          set -o pipefail
+          set +e
+          gauntletci analyze --no-banner --ascii --github-annotations --pr-comment-suggest --repo . \
+            --severity warn --sensitivity balanced --no-baseline < pr.diff
+          exit_code=$?
+          set -e
+          if [ "$exit_code" -ne 0 ]; then
+            echo "::error::GauntletCI self-analysis reported block-level findings (exit $exit_code). See annotations and PR comments."
+            exit "$exit_code"
+          fi

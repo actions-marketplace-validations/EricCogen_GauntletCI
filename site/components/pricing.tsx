@@ -17,9 +17,9 @@ interface FeatureRow {
 const features: FeatureRow[] = [
   // Community - included in all tiers
   { label: "Deterministic Change-Risk Detection", community: "check", pro: "check", teams: "check", enterprise: "check" },
-  { label: "Sub-Second Pre-Commit Hook",           community: "check", pro: "check", teams: "check", enterprise: "check" },
+  { label: "Fast Pre-Commit Hook",                   community: "check", pro: "check", teams: "check", enterprise: "check" },
   { label: "Per-Repo Configuration (.gauntletci.json)", community: "check", pro: "check", teams: "check", enterprise: "check" },
-  { label: "100% Local Execution & Privacy",       community: "check", pro: "check", teams: "check", enterprise: "check" },
+  { label: "Core Analysis Runs Locally by Default", community: "check", pro: "check", teams: "check", enterprise: "check" },
   { label: "Evidence String Redaction (PII / Secrets)", community: "check", pro: "check", teams: "check", enterprise: "check" },
 
   // Pro
@@ -39,6 +39,12 @@ const features: FeatureRow[] = [
   { label: "Complete Audit Trail Export",          community: "none", pro: "none", teams: "none", enterprise: "license" },
 ];
 
+const TIER_LABELS: Record<string, string> = {
+  pro: "Pro",
+  teams: "Teams",
+  enterprise: "Enterprise",
+};
+
 function Cell({ value, tierKey, tooltip }: { value: CellValue; tierKey?: string; tooltip?: React.ReactNode }) {
   if (value === "check") {
     return (
@@ -52,8 +58,14 @@ function Cell({ value, tierKey, tooltip }: { value: CellValue; tierKey?: string;
     const isExternal = !href.startsWith("mailto:");
     return (
       <div className="flex items-center justify-center gap-1.5">
-        <a href={href} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noopener noreferrer" : undefined} className="flex items-center gap-1.5 group/license">
-          <Key className="h-3 w-3 text-amber-400/80 shrink-0 group-hover/license:text-amber-400 transition-colors" />
+        <a
+          href={href}
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
+          aria-label={`Get ${TIER_LABELS[tierKey ?? ""] ?? tierKey} license`}
+          className="flex items-center gap-1.5 group/license"
+        >
+          <Key className="h-3 w-3 text-amber-400/80 shrink-0 group-hover/license:text-amber-400 transition-colors" aria-hidden="true" />
           <span className="text-xs text-amber-400/80 hidden sm:inline group-hover/license:text-amber-400 group-hover/license:underline transition-colors">
             License
           </span>

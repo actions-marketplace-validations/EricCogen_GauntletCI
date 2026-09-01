@@ -11,7 +11,8 @@ namespace GauntletCI.Core.Licensing;
 /// </summary>
 public static class LicenseService
 {
-    // DEV/PLACEHOLDER key -- replace with your production key pair before issuing live licenses.
+    // DEV/PLACEHOLDER key -- replace with your production key pair before issuing live licenses,
+    // or set GAUNTLETCI_LICENSE_PUBLIC_KEY / GAUNTLETCI_LICENSE_PUBLIC_KEY_FILE at runtime.
     // The matching private key is stored securely in your license issuance service and never committed.
     private static readonly string EmbeddedPublicKey = string.Join("\n",
         "-----BEGIN RSA PUBLIC KEY-----",
@@ -47,6 +48,11 @@ public static class LicenseService
     public static string? ReadRawToken(string envVarName = "GAUNTLETCI_LICENSE") =>
         ReadToken(envVarName);
 
+    /// <summary>
+    /// Parses a license JWT string without reading from env or disk.
+    /// </summary>
+    public static LicenseInfo ParseToken(string token) => Parse(token);
+
     private static string? ReadToken(string envVarName)
     {
         var envVal = Environment.GetEnvironmentVariable(envVarName);
@@ -72,9 +78,8 @@ public static class LicenseService
         var parts = token.Split('.');
         if (parts.Length != 3)
         {
-            // Legacy non-JWT token: backward-compat with the old "any non-empty env var" stub.
-            return new LicenseInfo(LicenseTier.Pro, null, null, true,
-                "Legacy license key format. Re-issue a signed token at gauntletci.com.");
+            return LicenseInfo.Invalid(
+                "License token is not a valid signed JWT. Re-issue a token at https://gauntletci.com/pricing");
         }
 
         try
@@ -83,7 +88,7 @@ public static class LicenseService
             var signature = Base64UrlDecode(parts[2]);
 
             using var rsa = RSA.Create();
-            rsa.ImportFromPem(EmbeddedPublicKey);
+            rsa.ImportFromPem(ResolvePublicKeyPem());
 
             if (!rsa.VerifyData(dataToVerify, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1))
                 return LicenseInfo.Invalid(
@@ -102,6 +107,11 @@ public static class LicenseService
                 expiresAt = DateTimeOffset.FromUnixTimeSeconds(expProp.GetInt64());
                 if (expiresAt.Value < DateTimeOffset.UtcNow)
                     return LicenseInfo.Expired(expiresAt.Value);
+            }
+            else if (!IsDevLicenseMode())
+            {
+                return LicenseInfo.Invalid(
+                    "License token is missing an expiry (exp) claim. Re-issue a token at https://gauntletci.com/pricing");
             }
 
             var tierStr = root.TryGetProperty("tier", out var tierProp) ? tierProp.GetString() : null;
@@ -122,6 +132,31 @@ public static class LicenseService
             return LicenseInfo.Invalid($"License could not be parsed: {ex.Message}");
         }
     }
+
+    private static string ResolvePublicKeyPem()
+    {
+#if DEBUG
+        if (IsDevLicenseMode())
+        {
+            var inline = Environment.GetEnvironmentVariable("GAUNTLETCI_LICENSE_PUBLIC_KEY");
+            if (!string.IsNullOrWhiteSpace(inline))
+                return inline.Replace("\\n", "\n", StringComparison.Ordinal).Trim();
+
+            var keyFile = Environment.GetEnvironmentVariable("GAUNTLETCI_LICENSE_PUBLIC_KEY_FILE");
+            if (!string.IsNullOrWhiteSpace(keyFile) && File.Exists(keyFile))
+            {
+                var pem = File.ReadAllText(keyFile).Trim();
+                if (!string.IsNullOrWhiteSpace(pem))
+                    return pem;
+            }
+        }
+#endif
+
+        return EmbeddedPublicKey;
+    }
+
+    internal static bool IsDevLicenseMode() =>
+        string.Equals(Environment.GetEnvironmentVariable("GAUNTLETCI_DEV"), "1", StringComparison.Ordinal);
 
     private static byte[] Base64UrlDecode(string input)
     {

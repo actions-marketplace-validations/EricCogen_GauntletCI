@@ -26,7 +26,7 @@ const tableRows = [
   {
     scenario: "Pre-commit feedback before a push",
     winner: "gauntlet",
-    note: "Sub-second local analysis. SonarQube runs post-push in CI.",
+    note: "Fast local analysis on typical staged diffs. SonarQube runs post-push in CI.",
   },
   {
     scenario: "Air-gapped or strict data-residency environments",
@@ -71,11 +71,16 @@ const featureRows = [
   { label: "Custom rules via code (no YAML required)", gauntlet: "yes" as const, sonar: "yes" as const },
 ];
 
-type CellVal = "yes" | "no" | "partial";
+type CellVal = "yes" | "no" | "partial" | "yes (Teams tier)";
 
 function Cell({ value, cyan }: { value: CellVal; cyan?: boolean }) {
-  if (value === "yes")
-    return <Check className={`h-5 w-5 mx-auto ${cyan ? "text-cyan-400" : "text-emerald-500/70"}`} />;
+  if (value === "yes" || value === "yes (Teams tier)")
+    return (
+      <Check
+        className={`h-5 w-5 mx-auto ${cyan ? "text-cyan-400" : "text-emerald-500/70"}`}
+        aria-label={value === "yes (Teams tier)" ? "Yes (Teams tier)" : "Yes"}
+      />
+    );
   if (value === "partial")
     return <AlertCircle className="h-4 w-4 mx-auto text-amber-400/60" />;
   return <Minus className="h-4 w-4 mx-auto text-muted-foreground/30" />;
@@ -269,7 +274,7 @@ export default function VsSonarQubePage() {
             removed a null guard that protected a hot path is signal.
           </p>
           <p className="text-muted-foreground">
-            Diff-based analysis also means GauntletCI can run in milliseconds before a commit, not
+            Diff-based analysis also means GauntletCI can run in seconds on typical staged diffs before a commit, not
             minutes after a push. Finding a regression pre-commit costs nothing. Finding it in
             production costs everything.
           </p>

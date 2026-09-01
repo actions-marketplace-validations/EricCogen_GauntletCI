@@ -22,8 +22,11 @@ public static class HttpClientFactory
     // Generic client: no auth, 30 second default timeout
     private static readonly Lazy<HttpClient> GenericClient = new(() => CreateGenericClient());
 
-    // Anthropic client: API key auth, 120 second timeout for inference calls
+    // Anthropic client: API key auth, 120 second timeout, no redirect
     private static readonly Lazy<HttpClient> AnthropicClientInstance = new(() => CreateAnthropicClient());
+
+    // Webhook client: Slack/Teams incoming webhooks, 30 second timeout, no redirect
+    private static readonly Lazy<HttpClient> WebhookClientInstance = new(() => CreateWebhookClient());
 
     // Codecov client: Bearer token auth, 15 second timeout
     private static readonly Lazy<HttpClient> CodecovClientInstance = new(() => CreateCodecovClient());
@@ -57,6 +60,13 @@ public static class HttpClientFactory
     public static HttpClient GetAnthropicClient() => AnthropicClientInstance.Value;
 
     /// <summary>
+    /// Gets an HTTP client for Slack/Teams incoming webhook POSTs.
+    /// Disables automatic redirects to prevent allowlisted URLs from being followed to internal targets.
+    /// Do NOT dispose; client is managed by the factory.
+    /// </summary>
+    public static HttpClient GetWebhookClient() => WebhookClientInstance.Value;
+
+    /// <summary>
     /// Gets a Codecov API client. Token must be attached per-request via HttpRequestMessage.Headers.
     /// Do NOT dispose; client is managed by the factory.
     /// </summary>
@@ -76,7 +86,8 @@ public static class HttpClientFactory
     {
         var client = new HttpClient(new SocketsHttpHandler
         {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            AllowAutoRedirect = false,
         })
         {
             Timeout = TimeSpan.FromSeconds(60)
@@ -99,7 +110,8 @@ public static class HttpClientFactory
     {
         var client = new HttpClient(new SocketsHttpHandler
         {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            AllowAutoRedirect = false,
         })
         {
             Timeout = TimeSpan.FromSeconds(30)
@@ -119,7 +131,8 @@ public static class HttpClientFactory
     {
         var client = new HttpClient(new SocketsHttpHandler
         {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            AllowAutoRedirect = false,
         })
         {
             Timeout = TimeSpan.FromSeconds(30)
@@ -155,13 +168,35 @@ public static class HttpClientFactory
     }
 
     /// <summary>
+    /// Creates a webhook HTTP client with redirects disabled (SSRF hardening for incoming webhooks).
+    /// </summary>
+    private static HttpClient CreateWebhookClient()
+    {
+        var handler = new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            AllowAutoRedirect = false,
+        };
+
+        var client = new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(30),
+        };
+
+        client.DefaultRequestHeaders.Add("User-Agent", "GauntletCI/2.0");
+
+        return client;
+    }
+
+    /// <summary>
     /// Creates a new HttpClient for Codecov API (requires token to be set by caller).
     /// </summary>
     private static HttpClient CreateCodecovClient()
     {
         var client = new HttpClient(new SocketsHttpHandler
         {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            AllowAutoRedirect = false,
         })
         {
             Timeout = TimeSpan.FromSeconds(15)
@@ -179,7 +214,8 @@ public static class HttpClientFactory
     {
         var client = new HttpClient(new SocketsHttpHandler
         {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            AllowAutoRedirect = false,
         })
         {
             Timeout = TimeSpan.FromSeconds(120)

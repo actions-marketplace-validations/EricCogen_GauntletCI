@@ -30,11 +30,11 @@ const faqSchema = buildFaqSchema([
   },
   {
     q: "What does the findings-count output contain?",
-    a: "findings-count is a string containing the number of findings GauntletCI produced. It counts lines in the output that match a GCI rule ID pattern. Use it in subsequent steps to conditionally post Slack alerts or upload artifacts.",
+    a: "findings-count is the exact number of findings in the JSON Findings array from gauntletci analyze --output json. Use it in subsequent steps to conditionally post Slack alerts or upload artifacts.",
   },
   {
     q: "Can I pin to a specific GauntletCI tool version?",
-    a: "Yes. Set gauntletci-version to the exact NuGet version you want, such as '2.1.0'. The default is the latest published version.",
+    a: "Yes. Set gauntletci-version to the exact NuGet version you want, such as '2.8.1'. The default is the latest published version.",
   },
 ]);
 
@@ -52,7 +52,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: EricCogen/GauntletCI@v2.1.1`;
+      - uses: EricCogen/GauntletCI@v2.8.1`;
 
 const FULL_WORKFLOW = `name: GauntletCI
 
@@ -71,7 +71,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: EricCogen/GauntletCI@v2.1.1
+      - uses: EricCogen/GauntletCI@v2.8.1
         id: gauntlet
         with:
           sensitivity: 'balanced'
@@ -114,10 +114,15 @@ export default function GithubActionPage() {
             <pre className="text-foreground whitespace-pre">{MINIMAL_WORKFLOW}</pre>
           </div>
           <p className="text-sm text-muted-foreground mt-3">
-            This runs with all defaults: balanced sensitivity, findings fail the check, no inline
-            comments. To post findings as inline PR review comments, add{" "}
-            <code className="bg-muted px-1 rounded text-xs">pull-requests: write</code> and set{" "}
-            <code className="bg-muted px-1 rounded text-xs">inline-comments: &apos;true&apos;</code>.
+            This runs with all defaults: <code className="bg-muted px-1 rounded text-xs">sensitivity: balanced</code>{" "}
+            filters noise while keeping Block and Warn findings visible, and{" "}
+            <code className="bg-muted px-1 rounded text-xs">fail-on-findings: true</code> fails the
+            check only when GauntletCI exits non-zero — Block-severity findings by default (set{" "}
+            <code className="bg-muted px-1 rounded text-xs">exitOn: Warn</code> in{" "}
+            <code className="bg-muted px-1 rounded text-xs">.gauntletci.json</code> to also fail on
+            warnings). Inline comments are off unless enabled. To post findings as inline PR review
+            comments, add <code className="bg-muted px-1 rounded text-xs">pull-requests: write</code>{" "}
+            and set <code className="bg-muted px-1 rounded text-xs">inline-comments: &apos;true&apos;</code>.
           </p>
         </section>
 
@@ -194,13 +199,13 @@ export default function GithubActionPage() {
               <tbody className="divide-y divide-border">
                 {[
                   ["sensitivity", '"balanced"', "strict | balanced | permissive. Controls which confidence levels trigger findings."],
-                  ["fail-on-findings", '"true"', "Exit with code 1 when any findings are produced, failing the GitHub check."],
+                  ["fail-on-findings", '"true"', "Pass through GauntletCI exit code. Block-severity findings fail by default; set exitOn to Warn in .gauntletci.json to also fail on warnings."],
                   ["inline-comments", '"false"', "Post findings as inline PR review comments. Requires pull-requests: write."],
                   ["no-llm", '"true"', "Disable LLM enrichment. Recommended for CI - keeps the step deterministic and fast."],
                   ["ascii", '"true"', "Use ASCII-only output. Recommended for CI logs - avoids encoding issues."],
                   ["commit", '""', "Commit SHA to analyze. Defaults to the PR head commit (github.event.pull_request.head.sha)."],
                   ["dotnet-version", '"8.0.x"', "The .NET SDK version to install on the runner."],
-                  ["gauntletci-version", '"2.1.1"', "The GauntletCI NuGet tool version to install."],
+                  ["gauntletci-version", '"2.8.1"', "The GauntletCI NuGet tool version to install."],
                 ].map(([name, def, desc]) => (
                   <tr key={name}>
                     <td className="px-4 py-2 font-mono text-xs text-cyan-400">{name}</td>
@@ -287,7 +292,7 @@ export default function GithubActionPage() {
             always passes.
           </p>
           <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm">
-            <pre className="text-foreground whitespace-pre">{`- uses: EricCogen/GauntletCI@v2.1.1
+            <pre className="text-foreground whitespace-pre">{`- uses: EricCogen/GauntletCI@v2.8.1
   with:
     fail-on-findings: 'false'
     inline-comments: 'true'

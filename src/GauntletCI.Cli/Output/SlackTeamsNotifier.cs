@@ -5,6 +5,7 @@ using System.Text.Json;
 using GauntletCI.Core;
 using GauntletCI.Core.Model;
 using GauntletCI.Core.Rules;
+using GauntletCI.Core.Security;
 
 namespace GauntletCI.Cli.Output;
 
@@ -13,8 +14,7 @@ namespace GauntletCI.Cli.Output;
 /// Soft-fails on missing webhooks or API errors.
 /// 
 /// Thread-Safe: Static HttpClient is thread-safe and managed by HttpClientFactory.
-/// The factory uses Lazy&lt;T&gt; with ExecutionAndPublication semantics, ensuring
-/// single-threaded initialization and safe concurrent access.
+/// Uses GetWebhookClient() which disables automatic redirects (SSRF hardening).
 /// </summary>
 public static class SlackTeamsNotifier
 {
@@ -23,7 +23,7 @@ public static class SlackTeamsNotifier
     /// Thread-safe: managed by HttpClientFactory with lazy initialization.
     /// Do NOT dispose; client is managed by the factory.
     /// </summary>
-    private static readonly HttpClient _http = HttpClientFactory.GetGenericClient();
+    private static readonly HttpClient _http = HttpClientFactory.GetWebhookClient();
 
     /// <summary>
     /// Sends notifications to Slack and/or Teams when Block-severity findings exist.
@@ -48,10 +48,20 @@ public static class SlackTeamsNotifier
         var tasks = new List<Task>();
 
         if (slackUrl is not null)
-            tasks.Add(SendSlackNotificationAsync(result, repo, prNumStr, shortSha, slackUrl, ct));
+        {
+            if (WebhookUrlValidator.TryValidateSlack(slackUrl, out var slackError))
+                tasks.Add(SendSlackNotificationAsync(result, repo, prNumStr, shortSha, slackUrl, ct));
+            else
+                Console.Error.WriteLine($"[GauntletCI] Slack webhook rejected: {slackError}");
+        }
 
         if (teamsUrl is not null)
-            tasks.Add(SendTeamsNotificationAsync(result, repo, prNumStr, shortSha, teamsUrl, ct));
+        {
+            if (WebhookUrlValidator.TryValidateTeams(teamsUrl, out var teamsError))
+                tasks.Add(SendTeamsNotificationAsync(result, repo, prNumStr, shortSha, teamsUrl, ct));
+            else
+                Console.Error.WriteLine($"[GauntletCI] Teams webhook rejected: {teamsError}");
+        }
 
         // Send notifications in parallel (both at once if both URLs exist)
         await Task.WhenAll(tasks);
@@ -72,7 +82,7 @@ public static class SlackTeamsNotifier
             using var response = await _http.PostAsync(slackUrl, content, ct);
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(ct);
+                var body = TruncateForLog(await response.Content.ReadAsStringAsync(ct));
                 Console.Error.WriteLine($"[GauntletCI] Slack notification failed: {response.StatusCode}: {body}");
             }
         }
@@ -97,7 +107,7 @@ public static class SlackTeamsNotifier
             using var response = await _http.PostAsync(teamsUrl, content, ct);
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(ct);
+                var body = TruncateForLog(await response.Content.ReadAsStringAsync(ct));
                 Console.Error.WriteLine($"[GauntletCI] Teams notification failed: {response.StatusCode}: {body}");
             }
         }
@@ -186,5 +196,14 @@ public static class SlackTeamsNotifier
         }
 
         return null;
+    }
+
+    private static string TruncateForLog(string? body, int maxLen = 120)
+    {
+        if (string.IsNullOrEmpty(body))
+            return "(empty)";
+
+        var trimmed = body.Replace('\r', ' ').Replace('\n', ' ');
+        return trimmed.Length <= maxLen ? trimmed : trimmed[..maxLen] + "…";
     }
 }

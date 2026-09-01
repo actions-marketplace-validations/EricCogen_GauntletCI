@@ -3,10 +3,23 @@ name: Submit to winget
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version without leading v (e.g. 2.8.0)"
+        required: true
+        type: string
 
 # Requires WINGET_TOKEN secret: a PAT with public_repo scope on an account
 # that has forked microsoft/winget-pkgs. The action submits a PR to the fork
 # and then opens a PR to microsoft/winget-pkgs from that fork.
+#
+# Initial package: microsoft/winget-pkgs#388209 (EricCogen.GauntletCI, validated).
+# After that PR merges, add WINGET_TOKEN and set repo variable
+# WINGET_SUBMIT_ENABLED=true so release publishes auto-open version bump PRs.
+#
+# If validation labels disappear on the open PR, push any commit to the fork branch
+# (empty commit is fine) to re-trigger Azure validation. Do not comment @wingetbot help merge.
 jobs:
   winget:
     runs-on: windows-latest

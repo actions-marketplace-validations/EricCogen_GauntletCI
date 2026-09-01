@@ -46,7 +46,7 @@ dotnet test GauntletCI.slnx --nologo --collect:"XPlat Code Coverage" --results-d
 | Project | Purpose |
 |---------|---------|
 | `GauntletCI.Tests` | Unit tests for rules, diff parser, config, LLM templates (~570 tests) |
-| `GauntletCI.Benchmarks` | Curated fixture tests: true/false positive regression checks |
+| `GauntletCI.Benchmarks` | Curated diff regression tests (17 asserted + 4 observation diffs; see `tests/GauntletCI.Benchmarks/Fixtures/curated/README.md`) |
 
 ### Opt-in tests
 
@@ -86,11 +86,17 @@ GauntletCI.slnx
 │   └── GauntletCI.Corpus/      # Corpus pipeline (hydration, labeling, storage)
 │       └── Storage/            # CorpusDb, SchemaInitializer, FixtureIdHelper
 ├── tests/
-│   ├── GauntletCI.Tests/       # xUnit unit tests
+│   ├── GauntletCI.Tests/       # Main xUnit test project
+│   ├── GauntletCI.Cli.Tests/   # CLI-focused tests
+│   ├── GauntletCI.Core.Tests/  # Core-focused tests
 │   └── GauntletCI.Benchmarks/  # Curated fixture benchmark tests
+├── scripts/                    # Corpus, benchmark, and audit automation
+├── design/app-mockup/          # Static UI mockup (app.gauntletci.com)
+├── packaging/assets/images/    # NuGet and marketing brand assets
 ├── data/
 │   └── gauntletci-corpus.db    # SQLite corpus database (fixtures, findings, labels)
 ├── docs/                       # Documentation
+│   └── examples/               # Reference configs (e.g. gauntletci-full.json)
 └── schemas/
     └── gauntletci-schema.json  # JSON Schema for .gauntletci.json (IDE IntelliSense)
 ```
@@ -105,7 +111,13 @@ After building, run the CLI directly from the output directory:
 dotnet run --project src/GauntletCI.Cli -- analyze --staged
 ```
 
-Or install as a local tool:
+Or install as a global tool from a local pack:
+
+```bash
+./scripts/install-gauntletci-global-tool.ps1 -AddToPath
+```
+
+Manual equivalent:
 
 ```bash
 dotnet pack src/GauntletCI.Cli -o ./nupkg

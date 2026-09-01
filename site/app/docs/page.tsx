@@ -38,7 +38,7 @@ const faqSchema = buildFaqSchema([
   },
   {
     q: "What does GauntletCI analyze?",
-    a: "GauntletCI reads the exact lines added and removed in your diff and evaluates them against 30+ deterministic rules. It flags behavior changes without test updates, breaking API changes, new exception paths, removed null guards, and hardcoded secrets.",
+    a: "GauntletCI reads the exact lines added and removed in your diff and evaluates them against 37 deterministic rules. It flags behavior changes without test updates, breaking API changes, new exception paths, removed null guards, and hardcoded secrets.",
   },
 ]);
 
@@ -70,10 +70,31 @@ export default function DocsPage() {
         <p className="text-sm text-muted-foreground mb-5">Requires .NET 8 or later. Updates with <code className="bg-muted px-1 rounded text-xs">dotnet tool update -g GauntletCI</code>.</p>
 
         <p className="text-sm font-semibold mb-2">Windows (winget)</p>
-        <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm mb-4">
+        <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm mb-2">
           <span className="text-cyan-400">PS&gt;</span>{" "}
           <span className="text-foreground">winget install EricCogen.GauntletCI</span>
         </div>
+        <p className="text-sm text-muted-foreground mb-5">
+          Catalog listing is pending Microsoft merge of{" "}
+          <a
+            href="https://github.com/microsoft/winget-pkgs/pull/388209"
+            className="text-cyan-400 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            winget-pkgs#388209
+          </a>{" "}
+          (validation passed). Until then, use the .NET global tool or{" "}
+          <a
+            href="https://github.com/EricCogen/GauntletCI/releases/latest"
+            className="text-cyan-400 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub release
+          </a>{" "}
+          zip on Windows.
+        </p>
 
         <p className="text-sm font-semibold mb-2">macOS / Linux (Homebrew)</p>
         <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm space-y-1 mb-4">
@@ -120,7 +141,7 @@ export default function DocsPage() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">What it analyzes</h2>
         <p className="text-muted-foreground mb-4">
-          GauntletCI reads the exact lines added and removed in your diff and evaluates them against 30+ deterministic rules. It flags:
+          GauntletCI reads the exact lines added and removed in your diff and evaluates them against 37 deterministic rules. It flags:
         </p>
         <ul className="space-y-2 text-sm text-muted-foreground list-none">
           {[

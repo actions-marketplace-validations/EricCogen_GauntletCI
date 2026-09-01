@@ -2,6 +2,7 @@
 using System.CommandLine;
 using GauntletCI.Corpus;
 using GauntletCI.Corpus.Models;
+using GauntletCI.Corpus.Scoring;
 using GauntletCI.Corpus.Storage;
 
 namespace GauntletCI.Cli.Commands.Factories;
@@ -181,10 +182,10 @@ public static class CorpusUtilityFactory
 
                 var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
                 cmd2.CommandText = $"""
-                    SELECT logged_at, step, provider, repo, error_code, error_message
+                    SELECT recorded_at, step, provider, repo, error_code, message
                     FROM pipeline_errors
                     {whereClause}
-                    ORDER BY logged_at DESC
+                    ORDER BY recorded_at DESC
                     LIMIT $limit
                     """;
 
@@ -331,8 +332,48 @@ public static class CorpusUtilityFactory
                     Console.WriteLine("╚════════════════════════════════════════╝");
                     Console.WriteLine();
 
+                    using var countCmd = db.Connection.CreateCommand();
+                    countCmd.CommandText = "SELECT COUNT(*) FROM fixtures";
+                    var indexedCountObj = await countCmd.ExecuteScalarAsync(ct);
+                    var indexedCount = indexedCountObj is long indexed ? indexed : 0;
+
                     var all = await store.ListFixturesAsync(null, ct);
-                    Console.WriteLine($"Total fixtures: {all.Count}");
+                    Console.WriteLine($"Indexed in database: {indexedCount}");
+                    Console.WriteLine($"Loaded metadata:     {all.Count}");
+
+                    var invalidTierIds = new List<string>();
+                    using (var tierCmd = db.Connection.CreateCommand())
+                    {
+                        tierCmd.CommandText = """
+                            SELECT fixture_id, tier
+                            FROM fixtures
+                            WHERE tier IS NULL
+                               OR tier = ''
+                               OR lower(tier) NOT IN ('discovery', 'silver', 'gold')
+                            ORDER BY fixture_id
+                            """;
+                        using var tierReader = await tierCmd.ExecuteReaderAsync(ct);
+                        while (await tierReader.ReadAsync(ct))
+                        {
+                            invalidTierIds.Add(tierReader.GetString(0));
+                        }
+                    }
+
+                    if (invalidTierIds.Count > 0)
+                    {
+                        Console.WriteLine(
+                            $"⚠ Warning: {invalidTierIds.Count} indexed fixture(s) have invalid tier values (not Discovery/Silver/Gold)");
+                        if (verbose)
+                        {
+                            foreach (var fixtureId in invalidTierIds)
+                                Console.WriteLine($"    {fixtureId}");
+                        }
+                    }
+                    else if (all.Count < indexedCount)
+                    {
+                        Console.WriteLine(
+                            $"⚠ Warning: {indexedCount - all.Count} indexed fixture(s) could not be materialized (missing index fields)");
+                    }
 
                     var byTier = all.GroupBy(m => m.Tier).ToDictionary(g => g.Key, g => g.ToList());
                     foreach (var (tierKey, tierList) in byTier.OrderBy(x => x.Key))
@@ -340,16 +381,24 @@ public static class CorpusUtilityFactory
                         Console.WriteLine($"  {tierKey,-10}: {tierList.Count,4}");
                     }
 
-                    // Check for orphaned fixtures (missing diff.patch)
+                    var storedPaths = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+                    using (var pathCmd = db.Connection.CreateCommand())
+                    {
+                        pathCmd.CommandText = "SELECT fixture_id, path FROM fixtures";
+                        using var pathReader = await pathCmd.ExecuteReaderAsync(ct);
+                        while (await pathReader.ReadAsync(ct))
+                        {
+                            storedPaths[pathReader.GetString(0)] =
+                                pathReader.IsDBNull(1) ? null : pathReader.GetString(1);
+                        }
+                    }
+
+                    // Check for orphaned fixtures (missing diff.patch on disk)
                     int orphaned = 0;
                     foreach (var fixture in all)
                     {
-                        string? fixturePath = null;
-                        foreach (var t in new[] { FixtureTier.Gold, FixtureTier.Silver, FixtureTier.Discovery })
-                        {
-                            var candidate = FixtureIdHelper.GetFixturePath(fixtures, t, fixture.FixtureId);
-                            if (Directory.Exists(candidate)) { fixturePath = candidate; break; }
-                        }
+                        storedPaths.TryGetValue(fixture.FixtureId, out var storedPath);
+                        var fixturePath = store.ResolveFixtureDirectory(fixture.FixtureId, fixture.Tier, storedPath);
 
                         if (fixturePath is null || !File.Exists(Path.Combine(fixturePath, "diff.patch")))
                             orphaned++;
@@ -400,6 +449,74 @@ public static class CorpusUtilityFactory
                         Console.WriteLine("✓ Corpus is healthy");
                     else
                         Console.WriteLine("⚠ Issues detected - review above warnings");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"[corpus] Error: {ex.Message}");
+                    ctx.ExitCode = 1;
+                }
+            }
+        });
+
+        return cmd;
+    }
+
+    /// <summary>
+    /// Create the 'audit-snapshot' command: persist labeled TP/FP/FN metrics for all rules.
+    /// Command: corpus audit-snapshot [--db] [--notes] [--dry-run]
+    /// </summary>
+    public static Command CreateAuditSnapshot()
+    {
+        var dbOpt = new Option<string>("--db", () => "./data/gauntletci-corpus.db", "Path to corpus SQLite database");
+        var notesOpt = new Option<string>("--notes", () => "post run-all labeled metrics", "Note stored on audit_snapshots.notes");
+        var dryRunOpt = new Option<bool>("--dry-run", () => false, "Print top rows only; do not insert");
+
+        var cmd = new Command(
+            "audit-snapshot",
+            "Insert labeled TP/FP/FN audit snapshot (expected_findings vs latest completed run)");
+        cmd.AddOption(dbOpt);
+        cmd.AddOption(notesOpt);
+        cmd.AddOption(dryRunOpt);
+
+        cmd.SetHandler(async (ctx) =>
+        {
+            var dbPath = ctx.ParseResult.GetValueForOption(dbOpt)!;
+            var notes = ctx.ParseResult.GetValueForOption(notesOpt);
+            var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
+            var ct = ctx.GetCancellationToken();
+
+            var db = new CorpusDb(dbPath);
+            await db.InitializeAsync(ct);
+            using (db)
+            {
+                try
+                {
+                    var rows = await LabeledRuleMetricsReader.ReadAsync(db.Connection, ct);
+                    var usefulness = await LabeledRuleMetricsReader.ReadUsefulnessAsync(db.Connection, ct);
+
+                    Console.WriteLine($"rules_with_labels={rows.Count}");
+
+                    var top = rows
+                        .Where(r => r.Tp > 0 || r.Fp > 0 || r.Fn > 0)
+                        .OrderByDescending(r => r.Fp)
+                        .ThenByDescending(r => r.Fn)
+                        .ThenBy(r => r.Tp)
+                        .Take(8);
+
+                    foreach (var row in top)
+                    {
+                        Console.WriteLine(
+                            $"{row.RuleId,-10} labeled={row.Labeled,3} " +
+                            $"tp={row.Tp,3} fp={row.Fp,3} fn={row.Fn,3} " +
+                            $"prec={row.PrecisionScore?.ToString() ?? string.Empty}");
+                    }
+
+                    if (dryRun)
+                        return;
+
+                    var snapshotId = await AuditSnapshotWriter.InsertAsync(
+                        db.Connection, rows, usefulness, notes, ct);
+                    Console.WriteLine($"snapshot_id={snapshotId} rows={rows.Count}");
                 }
                 catch (Exception ex)
                 {

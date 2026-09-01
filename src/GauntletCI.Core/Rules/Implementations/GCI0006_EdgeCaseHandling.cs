@@ -27,16 +27,16 @@ public class GCI0006_EdgeCaseHandling : RuleBase
         var diff = context.Diff;
         var findings = new List<Finding>();
 
-        CheckNullDereferences(diff, findings);
+        CheckNullDereferences(context, findings);
         CheckMissingParameterValidation(diff, findings);
-        CheckLoopBoundaryChanges(diff, findings);
         AddRoslynFindings(context.StaticAnalysis, findings);
 
         return Task.FromResult(findings);
     }
 
-    private void CheckNullDereferences(DiffContext diff, List<Finding> findings)
+    private void CheckNullDereferences(AnalysisContext context, List<Finding> findings)
     {
+        var diff = context.Diff;
         foreach (var file in diff.Files)
         {
             if (WellKnownPatterns.IsTestFile(file.NewPath) || WellKnownPatterns.IsGeneratedFile(file.NewPath)) continue;
@@ -47,11 +47,22 @@ public class GCI0006_EdgeCaseHandling : RuleBase
 
             for (int i = 0; i < addedLines.Count; i++)
             {
-                var content = addedLines[i].Content;
-                if (!HasUnsafeValueAccess(content)) continue;
+                var line = addedLines[i];
+                var content = line.Content;
+                if (!TryGetUnsafeValueAccessIndex(content, out int valueIndex)) continue;
 
                 // Skip comment lines: .Value in a comment is not executable code
                 if (WellKnownPatterns.GuardPatterns.IsCommentLine(content)) continue;
+
+                if (!RegexEvidencePromotion.PassesCodeCandidateValidation(
+                        context,
+                        file.NewPath,
+                        line,
+                        valueIndex,
+                        confirmSemantic: syntax =>
+                            syntax.IsConfirmedMemberAccess(file.NewPath, line.LineNumber, "Value", valueIndex),
+                        allowWhenNoSyntaxTree: c => !WellKnownPatterns.GuardPatterns.IsCommentLine(c)))
+                    continue;
 
                 // Skip expression-bodied property/method declarations: the .Value access IS
                 // the declaration body (e.g. public override object? Value => _inner.Value;)
@@ -224,8 +235,9 @@ public class GCI0006_EdgeCaseHandling : RuleBase
     //   ?.Value   -- null-conditional access preceding .Value
     //   .Value?.  -- null-conditional after .Value (developer handles null result)
     //   .Values   -- a different property; word-boundary check excludes .Values, .ValueOrDefault, etc.
-    private static bool HasUnsafeValueAccess(string content)
+    private static bool TryGetUnsafeValueAccessIndex(string content, out int matchIndex)
     {
+        matchIndex = -1;
         int pos = 0;
         while (pos < content.Length)
         {
@@ -275,8 +287,10 @@ public class GCI0006_EdgeCaseHandling : RuleBase
                 continue;
             }
 
+            matchIndex = idx + 1;
             return true;
         }
+
         return false;
     }
 
@@ -286,161 +300,6 @@ public class GCI0006_EdgeCaseHandling : RuleBase
         return t.Contains('(') && t.Contains(')') &&
                (t.StartsWith("public ", StringComparison.Ordinal) ||
                 t.StartsWith("protected ", StringComparison.Ordinal));
-    }
-
-    private void CheckLoopBoundaryChanges(DiffContext diff, List<Finding> findings)
-    {
-        foreach (var file in diff.Files)
-        {
-            if (WellKnownPatterns.IsTestFile(file.NewPath) || WellKnownPatterns.IsGeneratedFile(file.NewPath)) continue;
-
-            foreach (var hunk in file.Hunks)
-            {
-                // Pattern 1: Detect new break statements added to loops
-                DetectNewBreakInLoop(this, file, hunk, findings);
-
-                // Pattern 2: Detect new max iteration checks added
-                DetectNewIterationLimit(this, file, hunk, findings);
-
-                // Pattern 3: Detect loop condition strengthening
-                DetectLoopConditionStrengthening(this, file, hunk, findings);
-            }
-        }
-    }
-
-    private static void DetectNewBreakInLoop(GCI0006_EdgeCaseHandling rule, DiffFile file, DiffHunk hunk, List<Finding> findings)
-    {
-        var lines = hunk.Lines.ToList();
-        for (int i = 0; i < lines.Count; i++)
-        {
-            var line = lines[i];
-            if (line.Kind != DiffLineKind.Added) continue;
-
-            var content = line.Content.Trim();
-            if (!content.StartsWith("break", StringComparison.Ordinal)) continue;
-
-            // Check surrounding context for loop keywords
-            int start = Math.Max(0, i - 10);
-            int end = Math.Min(lines.Count, i + 5);
-
-            bool inLoopContext = false;
-            for (int j = start; j < end; j++)
-            {
-                var l = lines[j].Content;
-                if (l.Contains("while (", StringComparison.Ordinal) ||
-                    l.Contains("for (", StringComparison.Ordinal) ||
-                    l.Contains("for(", StringComparison.Ordinal) ||
-                    l.Contains("foreach (", StringComparison.Ordinal))
-                {
-                    inLoopContext = true;
-                    break;
-                }
-            }
-
-            if (inLoopContext)
-            {
-                findings.Add(rule.CreateFinding(
-                    file,
-                    summary: $"New break statement added to loop in {file.NewPath} (possible loop boundary fix)",
-                    evidence: $"Added: {content}",
-                    whyItMatters: "Adding loop termination conditions may indicate fixing unbounded loops that could cause denial of service.",
-                    suggestedAction: "Verify that this loop boundary change is intentional and correctly implements termination conditions.",
-                    confidence: Confidence.Medium,
-                    line: line));
-                break; // one finding per hunk
-            }
-        }
-    }
-
-    private static void DetectNewIterationLimit(GCI0006_EdgeCaseHandling rule, DiffFile file, DiffHunk hunk, List<Finding> findings)
-    {
-        var lines = hunk.Lines.ToList();
-        for (int i = 0; i < lines.Count; i++)
-        {
-            var line = lines[i];
-            if (line.Kind != DiffLineKind.Added) continue;
-
-            var content = line.Content.Trim();
-            // Look for patterns like: i < MAX, count < 1000, iterations < limit
-            if ((content.Contains("< ") || content.Contains("<= ")) &&
-                (content.Contains("count", StringComparison.OrdinalIgnoreCase) ||
-                 content.Contains("i ", StringComparison.OrdinalIgnoreCase) ||
-                 content.Contains("iterations", StringComparison.OrdinalIgnoreCase) ||
-                 content.Contains("MAX", StringComparison.Ordinal) ||
-                 content.Contains("limit", StringComparison.OrdinalIgnoreCase)))
-            {
-                // Check for loop context
-                int start = Math.Max(0, i - 10);
-                int end = Math.Min(lines.Count, i + 5);
-
-                bool inLoopContext = false;
-                for (int j = start; j < end; j++)
-                {
-                    var l = lines[j].Content;
-                    if (l.Contains("while (", StringComparison.Ordinal) ||
-                        l.Contains("for (", StringComparison.Ordinal) ||
-                        l.Contains("for(", StringComparison.Ordinal))
-                    {
-                        inLoopContext = true;
-                        break;
-                    }
-                }
-
-                if (inLoopContext)
-                {
-                    findings.Add(rule.CreateFinding(
-                        file,
-                        summary: $"New iteration limit added to loop in {file.NewPath} (possible loop boundary fix)",
-                        evidence: $"Added: {content}",
-                        whyItMatters: "Adding iteration limits prevents infinite loops that could cause denial of service through resource exhaustion.",
-                        suggestedAction: "Verify the iteration limit is appropriate and correctly prevents unbounded execution.",
-                        confidence: Confidence.Medium,
-                        line: line));
-                    break; // one finding per hunk
-                }
-            }
-        }
-    }
-
-    private static void DetectLoopConditionStrengthening(GCI0006_EdgeCaseHandling rule, DiffFile file, DiffHunk hunk, List<Finding> findings)
-    {
-        var lines = hunk.Lines.ToList();
-
-        // Look for removed and added while/for conditions to compare
-        for (int i = 0; i < lines.Count; i++)
-        {
-            var removedLine = lines[i];
-            if (removedLine.Kind != DiffLineKind.Removed) continue;
-
-            var removedContent = removedLine.Content.Trim();
-            if (!removedContent.StartsWith("while (", StringComparison.Ordinal) &&
-                !removedContent.StartsWith("for (", StringComparison.Ordinal)) continue;
-
-            // Look for a corresponding added line
-            for (int j = i + 1; j < Math.Min(lines.Count, i + 10); j++)
-            {
-                var addedLine = lines[j];
-                if (addedLine.Kind != DiffLineKind.Added) continue;
-
-                var addedContent = addedLine.Content.Trim();
-                if (!addedContent.StartsWith("while (", StringComparison.Ordinal) &&
-                    !addedContent.StartsWith("for (", StringComparison.Ordinal)) continue;
-
-                // Check if the new condition is more restrictive (added AND clause)
-                if (addedContent.Contains(" && ") && !removedContent.Contains(" && "))
-                {
-                    findings.Add(rule.CreateFinding(
-                        file,
-                        summary: $"Loop condition strengthened in {file.NewPath} (possible loop boundary fix)",
-                        evidence: $"Old: {removedContent.Substring(0, Math.Min(60, removedContent.Length))}...\nNew: {addedContent.Substring(0, Math.Min(60, addedContent.Length))}...",
-                        whyItMatters: "Strengthening loop exit conditions may indicate fixing unbounded loops that could cause denial of service.",
-                        suggestedAction: "Verify that the new loop condition correctly prevents unbounded iteration.",
-                        confidence: Confidence.Low,
-                        line: addedLine));
-                    return; // one finding per file
-                }
-            }
-        }
     }
 
     private static void AddRoslynFindings(AnalyzerResult? staticAnalysis, List<Finding> findings)

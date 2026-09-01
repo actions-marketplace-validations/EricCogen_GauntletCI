@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Elastic-2.0
 using GauntletCI.Core.Configuration;
 using GauntletCI.Core.Licensing;
+using GauntletCI.Core.Security;
 using GauntletCI.Llm;
 
 namespace GauntletCI.Cli.LlmDaemon;
@@ -38,13 +39,22 @@ internal static class LlmEngineSelector
         var ollamaUrl = config.Corpus.OllamaEndpoints.FirstOrDefault(e => e.Enabled)?.Url;
         if (!string.IsNullOrWhiteSpace(ollamaUrl))
         {
-            var endpoint = ollamaUrl.TrimEnd('/') + "/v1/chat/completions";
-            if (!Uri.TryCreate(endpoint, UriKind.Absolute, out _))
+            var license = LicenseService.Load(config.Llm?.LicenseKeyEnv ?? "GAUNTLETCI_LICENSE");
+            if (!license.HasTier(LicenseTier.Pro))
             {
-                Console.Error.WriteLine($"[GauntletCI] Invalid Ollama URL: {endpoint}. Skipping Ollama engine.");
+                return WarnAndSkip(
+                    "--with-llm was passed but no valid Pro license was found.",
+                    "Local Ollama LLM enrichment requires a GauntletCI Pro or higher license.",
+                    "Get a license at https://gauntletci.com/pricing");
+            }
+
+            if (!LlmEndpointValidator.TryValidateConfigOllamaBaseUrl(ollamaUrl, out var ollamaError))
+            {
+                Console.Error.WriteLine($"[GauntletCI] Ollama URL rejected: {ollamaError}. Skipping Ollama engine.");
             }
             else
             {
+                var endpoint = ollamaUrl.TrimEnd('/') + "/v1/chat/completions";
                 var model = config.Llm?.Model ?? LlmDefaults.OllamaModel;
                 var numCtx = config.Llm?.NumCtx ?? 16_384;
                 var maxTok = config.Llm?.MaxCompleteTokens ?? 2_048;
@@ -96,6 +106,12 @@ internal static class LlmEngineSelector
                 $"--with-llm was passed but no API key was found in ${llmCfg.CiApiKeyEnv}.",
                 "A remote LLM endpoint is configured but the API key env var is missing.",
                 $"Set ${llmCfg.CiApiKeyEnv} in your pipeline secrets and retry.");
+
+        if (!OutboundUrlValidator.TryValidateHttpsUrl(llmCfg.CiEndpoint, out var endpointError))
+            return WarnAndSkip(
+                $"--with-llm was passed but 'llm.ciEndpoint' is not a valid outbound HTTPS URL: {endpointError}",
+                "Remote LLM endpoints must use HTTPS and must not target private or loopback hosts.",
+                "Set 'llm.ciEndpoint' to a public HTTPS OpenAI-compatible URL.");
 
         return new RemoteLlmEngine(llmCfg.CiEndpoint, llmCfg.CiModel, apiKey,
             llmCfg.NumCtx, llmCfg.MaxCompleteTokens);

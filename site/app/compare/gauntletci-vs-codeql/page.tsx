@@ -26,7 +26,7 @@ const tableRows = [
   {
     scenario: "Pre-commit feedback before a push",
     winner: "gauntlet",
-    note: "CodeQL runs post-push in CI and takes minutes. GauntletCI runs in milliseconds.",
+    note: "CodeQL runs post-push in CI and takes minutes. GauntletCI runs in seconds on typical staged diffs.",
   },
   {
     scenario: "Air-gapped or strict data-residency environments",
@@ -60,7 +60,7 @@ const featureRows = [
   { label: "Core analysis: local, no code upload by default", gauntlet: "yes" as const, codeql: "partial" as const },
   { label: "Pre-commit (before push) feedback", gauntlet: "yes" as const, codeql: "no" as const },
   { label: "Air-gap / data residency friendly (core engine)", gauntlet: "yes" as const, codeql: "no" as const },
-  { label: "Sub-second analysis time", gauntlet: "yes" as const, codeql: "no" as const },
+  { label: "Fast local analysis (typical staged diffs)", gauntlet: "yes" as const, codeql: "no" as const },
   { label: "Security variant / CVE detection", gauntlet: "no" as const, codeql: "yes" as const },
   { label: "Custom query language (QL)", gauntlet: "no" as const, codeql: "yes" as const },
   { label: "GitHub Security tab integration", gauntlet: "partial" as const, codeql: "yes" as const },
@@ -73,11 +73,16 @@ const featureRows = [
   { label: "Custom rules via code (no query language required)", gauntlet: "yes" as const, codeql: "yes" as const },
 ];
 
-type CellVal = "yes" | "no" | "partial";
+type CellVal = "yes" | "no" | "partial" | "yes (Teams tier)";
 
 function Cell({ value, cyan }: { value: CellVal; cyan?: boolean }) {
-  if (value === "yes")
-    return <Check className={`h-5 w-5 mx-auto ${cyan ? "text-cyan-400" : "text-emerald-500/70"}`} />;
+  if (value === "yes" || value === "yes (Teams tier)")
+    return (
+      <Check
+        className={`h-5 w-5 mx-auto ${cyan ? "text-cyan-400" : "text-emerald-500/70"}`}
+        aria-label={value === "yes (Teams tier)" ? "Yes (Teams tier)" : "Yes"}
+      />
+    );
   if (value === "partial")
     return <AlertCircle className="h-4 w-4 mx-auto text-amber-400/60" />;
   return <Minus className="h-4 w-4 mx-auto text-muted-foreground/30" />;
@@ -183,15 +188,15 @@ export default function VsCodeQLPage() {
             {[
               {
                 title: "Change-time analysis",
-                body: "GauntletCI only looks at the diff. It runs in milliseconds before a commit and tells you what your change broke - not what was already broken in the codebase before you touched it.",
+                body: "GauntletCI only looks at the diff. It runs in seconds on typical staged diffs before a commit and tells you what your change broke - not what was already broken in the codebase before you touched it.",
               },
               {
                 title: "No QL required",
-                body: "CodeQL's power comes with complexity. GauntletCI's 30+ built-in C#/.NET rules cover the most common behavioral regression classes with zero configuration required to start.",
+                body: "CodeQL's power comes with complexity. GauntletCI's 37 built-in C#/.NET rules cover the most common behavioral regression classes with zero configuration required to start.",
               },
               {
-                title: "100% local, always",
-                body: "CodeQL results are uploaded to GitHub. GauntletCI never sends code anywhere. No GitHub Advanced Security subscription required. Works in air-gapped environments and private networks.",
+                title: "Local by default",
+                body: "CodeQL results are uploaded to GitHub. GauntletCI core analysis never sends code anywhere by default. No GitHub Advanced Security subscription required. Works in air-gapped environments and private networks.",
               },
             ].map((card) => (
               <div key={card.title} className="rounded-lg border border-border bg-card/50 p-5">
@@ -269,7 +274,7 @@ export default function VsCodeQLPage() {
             vulnerabilities across millions of lines of code.
           </p>
           <p className="text-muted-foreground mb-4">
-            GauntletCI runs in milliseconds before a commit. It does not scan the whole codebase.
+            GauntletCI runs in seconds on typical staged diffs before a commit. It does not scan the whole codebase.
             It asks one focused question: "Did this change introduce a behavioral regression?"
             The speed is not a shortcut; it is the point. Pre-commit feedback changes developer
             behavior in a way that post-push alerts do not.

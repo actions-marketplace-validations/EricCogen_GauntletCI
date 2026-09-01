@@ -127,7 +127,7 @@ export default function IntegrationsPage() {
             {
               href: "/docs/integrations/mcp",
               label: "MCP Server",
-              desc: "Source build available today; npm package distribution is coming soon.",
+              desc: "Built-in via gauntletci mcp serve (Pro). Optional npm wrapper coming soon.",
               tag: "AI",
               status: "Coming soon",
             },
@@ -165,7 +165,7 @@ export default function IntegrationsPage() {
       <section>
         <h2 className="text-2xl font-semibold mb-3">GitHub Actions</h2>
         <p className="text-muted-foreground mb-2">
-          The simplest setup uses the published Marketplace action. Add this workflow to analyze every pull request:
+          The simplest setup uses the published composite action from this repository. Add this workflow to analyze every pull request:
         </p>
         <div className="rounded-lg border border-border bg-card p-4 font-mono text-sm overflow-x-auto mb-4">
           <pre className="text-foreground whitespace-pre">{`name: GauntletCI Analysis
@@ -185,7 +185,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: EricCogen/GauntletCI@v2.1.1
+      - uses: EricCogen/GauntletCI@v2.8.1
         with:
           sensitivity: 'balanced'
           inline-comments: 'true'
@@ -286,11 +286,13 @@ steps:
     displayName: Analyze PR diff`}</pre>
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
-          For inline pipeline annotations, use the{" "}
+          For inline pipeline annotations, see the{" "}
           <Link href="/docs/integrations/azure-devops" className="text-cyan-400 hover:underline">
-            Azure DevOps Marketplace task
+            Azure DevOps integration docs
           </Link>{" "}
-          instead, which emits <code className="bg-muted px-1 rounded text-xs">##vso</code> logging commands automatically.
+          for manual pipeline setup. A Marketplace task is coming soon; until then use the script
+          above or the manual steps on the Azure DevOps page, which emits{" "}
+          <code className="bg-muted px-1 rounded text-xs">##vso</code> logging commands when configured.
         </p>
       </section>
 
@@ -356,7 +358,7 @@ pipelines:
               </tr>
               <tr>
                 <td className="px-4 py-2 font-mono text-destructive">1</td>
-                <td className="px-4 py-2 text-sm text-muted-foreground">Findings detected</td>
+                <td className="px-4 py-2 text-sm text-muted-foreground">Blocking findings detected (Block by default; Warn when exitOn is Warn)</td>
                 <td className="px-4 py-2 text-sm text-destructive">Fail / block merge</td>
               </tr>
               <tr>

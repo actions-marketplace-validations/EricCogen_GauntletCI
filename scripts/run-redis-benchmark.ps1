@@ -28,7 +28,7 @@ if (-not (Test-Path $DiffPath)) {
     else {
         gh api repos/StackExchange/StackExchange.Redis/pulls/2995 `
             --header "Accept: application/vnd.github.diff" `
-            -o $DiffPath
+            | Set-Content -Path $DiffPath -Encoding utf8
     }
 }
 

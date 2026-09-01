@@ -16,10 +16,10 @@ jobs:
   dependency-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
@@ -30,10 +30,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          failed=0
           while IFS= read -r project; do
             echo "Auditing $project"
-            dotnet list "$project" package --vulnerable --include-transitive
+            if dotnet list "$project" package --vulnerable --include-transitive | grep -q "has the following vulnerable packages"; then
+              echo "Vulnerable packages found in $project"
+              failed=1
+            fi
           done < <(find src -name '*.csproj' | sort)
+          exit $failed
 
   npm-audit:
     runs-on: ubuntu-latest
@@ -41,7 +46,7 @@ jobs:
       run:
         working-directory: site
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -50,7 +55,7 @@ jobs:
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: "pnpm"
@@ -62,11 +67,45 @@ jobs:
       - name: Audit npm dependencies
         run: pnpm audit --audit-level moderate
 
+  npm-audit-worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
+
+      - run: npm ci
+      - run: npm audit --audit-level moderate
+
+  npm-audit-github-app-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: github-app-server
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: github-app-server/package-lock.json
+
+      - run: npm ci
+      - run: npm audit --audit-level moderate
+
   dependency-review:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v5
@@ -74,21 +113,29 @@ jobs:
           fail-on-severity: moderate
 
   codeql:
+    name: CodeQL (${{ matrix.language }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp, javascript-typescript]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: csharp
+          languages: ${{ matrix.language }}
+          source-root: ${{ matrix.language == 'javascript-typescript' && 'site' || '.' }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
       - name: Build
+        if: matrix.language == 'csharp'
         run: dotnet build GauntletCI.slnx --configuration Release
 
       - name: Analyze

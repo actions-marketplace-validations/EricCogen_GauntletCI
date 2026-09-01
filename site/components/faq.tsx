@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const commonQA = [
   {
     question: "What is Behavioral Change Risk?",
@@ -45,14 +47,14 @@ const commonQA = [
     question: "Can I add custom detection rules?",
     answer: (
       <>
-        Yes. GauntletCI is open source and built for extension. Implement{" "}
+        Yes. GauntletCI is source-available under the Elastic License 2.0 and built for extension. Implement{" "}
         <code>IRule</code> (or extend <code>RuleBase</code>), place the file in{" "}
         <code>src/GauntletCI.Core/Rules/Implementations/</code>, and write a test.
         The orchestrator discovers all rules via reflection at startup - no registration step needed.
         For team-specific rules without code, the{" "}
         <code>experimental.engineeringPolicy</code> config lets you define rules in plain markdown,
         evaluated locally by the LLM.{" "}
-        <a href="/docs/custom-rules" className="text-cyan-400 hover:underline">
+        <a href="/docs/custom-rules" className="text-cyan-400 underline underline-offset-2">
           Read the custom rules guide.
         </a>
       </>
@@ -105,7 +107,7 @@ const commonQA = [
         Add the workflow to your repo. It runs on every pull request, diffs the branch against the base,
         posts findings as inline review comments on the exact diff lines that triggered them, and exits with
         code 1 if blocking findings are detected. See the{" "}
-        <a href="/docs/integrations" className="text-cyan-400 hover:underline">CI/CD Integrations</a> doc for
+        <a href="/docs/integrations" className="text-cyan-400 underline underline-offset-2">CI/CD Integrations</a> doc for
         the full YAML.
       </>
     ),
@@ -186,9 +188,13 @@ const faqs = [
     myth: "AI finds the bugs.",
     reality: (
       <>
-        The <strong>detection engine is 100% deterministic Roslyn analysis</strong>. It uses a fixed set of 30+
-        rules to identify changes. The AI (which runs 100% offline, locally) is only used to <em>explain</em> the
-        finding in plain English so juniors do not have to Google the error code.
+        The <strong>detection engine is 100% deterministic Roslyn analysis</strong> on 37 active
+        rules (39 implemented in Core). No LLM is required for rule evaluation or findings. Optional{" "}
+        <Link href="/docs/privacy-modes" className="text-cyan-400 hover:underline">
+          Local AI or integration modes
+        </Link>{" "}
+        can add plain-English explanations; those modes are off by default and never change which rules
+        fire.
       </>
     ),
   },
@@ -197,7 +203,7 @@ const faqs = [
     myth: "Analysis makes CI slower.",
     reality: (
       <>
-        GauntletCI runs <strong>locally in under one second</strong> on just the diff. By catching the risky
+        GauntletCI runs <strong>locally in seconds</strong> on typical staged diffs. By catching the risky
         change <em>before</em> you push, you avoid the push, wait 15 minutes, CI fails, fix loop that actually
         kills velocity.
       </>

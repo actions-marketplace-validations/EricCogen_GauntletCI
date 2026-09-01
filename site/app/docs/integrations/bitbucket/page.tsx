@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { buildFaqSchema, softwareApplicationSchema } from "@/lib/schemas";
+import { IntegrationRelatedLinks } from "../_components/integration-related-links";
 
 export const metadata: Metadata = {
   title: "Bitbucket Pipelines Integration | GauntletCI Docs",
@@ -164,7 +165,7 @@ export default function BitbucketPage() {
             </div>
             <div className="p-4 font-mono text-xs space-y-1">
               <p className="text-muted-foreground">+ gauntletci analyze --diff pr.diff --no-banner --ascii</p>
-              <p className="text-foreground mt-2">GauntletCI v2.1.1</p>
+              <p className="text-foreground mt-2">GauntletCI v2.8.1</p>
               <p className="text-foreground">Analyzed 3 files, 47 changed lines</p>
               <p className="text-foreground mt-1">
                 <span className="text-red-400">[BLOCK]</span>{" "}
@@ -179,6 +180,7 @@ export default function BitbucketPage() {
             </div>
           </div>
         </section>
+        <IntegrationRelatedLinks />
       </div>
     </>
   );

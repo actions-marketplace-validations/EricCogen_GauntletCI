@@ -4,15 +4,15 @@
 
 ## What It Does
 
-GauntletCI analyzes the exact lines added or removed in a pull request and flags patterns that introduce unvalidated behavioral risk: before code is merged. No compilation, no AST, no network. Results in under one second.
+GauntletCI analyzes the exact lines added or removed in a pull request and flags patterns that introduce unvalidated behavioral risk before code is merged. Targeted Roslyn analysis on changed C# files runs locally in seconds on typical staged diffs; no full solution build or remote CI queue required for the inner loop.
 
 ---
 
 ## Features
 
-### 34 Active Detection Rules (36 implementations)
+### 37 Active Detection Rules (39 implementations)
 
-GauntletCI ships **36** rule classes; **34** run by default. **GCI0054** and **GCI0055** are disabled (severity `None`) because **GCI0016** and **GCI0003** cover the same patterns with lower duplication.
+GauntletCI ships **39** rule classes; **37** run by default. **GCI0054** and **GCI0055** are disabled (severity `None`) because **GCI0016** and **GCI0003** cover the same patterns with lower duplication.
 
 #### Behavior & Contract Safety
 - Removed logic (return, throw, if/else, boolean operators) without matching test changes
@@ -155,7 +155,7 @@ Drop-in composite action with inputs for commit SHA, fail-on-findings, inline PR
 | Benefit | Why it matters |
 |---|---|
 | Catches what green tests miss | Tests pass even when behavior changes without matching validation |
-| Runs in under one second | No compile, no AST, no network: structural heuristics on diff lines only |
+| Runs in seconds on typical staged diffs | Local Roslyn syntax/semantic analysis on changed files; no full solution build required |
 | Zero noise about style | Every rule targets behavioral or security risk, not formatting or preferences |
 | Works anywhere git does | Pre-commit hook, CI pipeline, or ad-hoc on any commit SHA |
 | Baseline suppression | Teams can snapshot known findings and only see what is new: no alert fatigue |
@@ -175,7 +175,7 @@ Drop-in composite action with inputs for commit SHA, fail-on-findings, inline PR
 | GCI0003: Removed logic without tests | Return/throw removed from production code with no test diff | Multiple repos |
 | GCI0004: Breaking API change | Public method signatures changed or removed | Multiple repos |
 | GCI0006: Edge case handling | `OpenAsyncWriteStream(string path, ...)` added with no null guard on `path` | SharpCompress |
-| GCI0007: Breaking serialization change | `[JsonProperty]` / `[DataMember]` attributes removed from DTO | Multiple repos |
+| GCI0007: Error Handling Integrity | Swallowed exceptions or removed error logging in catch blocks | Multiple repos |
 | GCI0010: Hardcoded secret | `_secretKey = "secretkey"`: credential-like string literal in AWS signing code | aws-sdk-net |
 | GCI0012: Hardcoded secret | Password literal assigned in production code | Multiple repos |
 | GCI0015: Unchecked cast | `(int)input.Position`: `Stream.Position` is `long`; overflows for files >2 GB | SharpCompress |
@@ -199,10 +199,14 @@ Rules not yet validated from corpus:
 - **GCI0001**: Diff integrity check; disabled in GauntletCI own CI config; no corpus example found
 - **GCI0029**: PII in logs; high FP rate on broad terms like `name`; excluded from showcase
 - **GCI0035**: Layer import violations; requires `ForbiddenImports` config to fire
-- **GCI0048**: Insecure random; newly added; corpus validation pending
-- **GCI0049**: Float equality; newly added; corpus validation pending
-- **GCI0052**: Dependency bot API drift; fires when bot-updated package appears in source without API surface update; corpus validation pending
-- **GCI0053**: Lockfile changed without source; fires when lockfile changes with no corresponding .cs changes; corpus validation pending
+- **GCI0051**: Numeric coercion risk; unit tested; no curated OSS PR showcase example yet
+- **GCI0052**: Dependency bot API drift; **disabled by default** — requires `GITHUB_ACTOR` bot context unavailable in generic diffs
+
+Rules validated via unit tests and case studies (not listed in the corpus showcase table above):
+- **GCI0048**: Insecure random — [case study](case-studies/gci0048-insecure-random.md) and unit tests
+- **GCI0049**: Float/double equality — unit tests and Silver corpus heuristics
+- **GCI0050**: SQL column truncation — [case study](case-studies/gci0050-sql-truncation.md) and unit tests
+- **GCI0053**: Lockfile changed without source — unit tests across supported lockfile formats
 
 Known precision caveats (as of current version):
 - **GCI0029**: `name` term fires on logging context keys and property names, not just PII; use `.gauntletci-ignore` to suppress per path
